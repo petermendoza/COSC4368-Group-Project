@@ -140,7 +140,7 @@ alpha = 0.3  # Learning rate
 gamma = 0.5  # Discount factor
 # epsilon when incorporating pexploit later
 
-num_episodes = 9000
+num_episodes = 1000
 # PRANDOM
 for episode in range(num_episodes):
     for i in env.agent_info:
