@@ -11,7 +11,7 @@ class RLEnvironment:
         
         # Initialize pickup and dropoff locations
         self.pickup_locations = [(1,0), (2,4), (0,2)]
-        self.dropoff_locations = [(1,1), (3,1), (4,0)]
+        self.dropoff_locations = [(1,1), (2,2), (3,3)]
         
         # Initialize agent locations and colors
         self.agent_info = [{'location': (3,3), 'color': 'red', 'carrying': False}, # Agent ID 0
@@ -21,77 +21,58 @@ class RLEnvironment:
         # Initialize block counts at pickup and dropoff locations
         self.pickup_blocks = [5] * num_agents
         self.dropoff_blocks = [0] * num_agents
-    
+        
+    def aplop(self, x, y):
+        applicable_operators = set()
+
+        # Check if agent can move in each direction
+        if x > 0: #move left 
+            target_location = x-1
+            location_vacant = all(agent['location'] != target_location for agent in self.agent_info)
+            if location_vacant:
+                applicable_operators.add(0)
+        if x < self.grid_size-1: #move right 
+            target_location = x+1
+            location_vacant = all(agent['location'] != target_location for agent in self.agent_info)
+            if location_vacant:
+                applicable_operators.add(1)            
+        if y > 0 : #move down 
+            target_location = y-1
+            location_vacant = all(agent['location'] != target_location for agent in self.agent_info)
+            if location_vacant:
+                applicable_operators.add(2)
+        if y < self.grid_size-1: #move up 
+            target_location = y+1
+            location_vacant = all(agent['location'] != target_location for agent in self.agent_info)
+            if location_vacant:
+                applicable_operators.add(3)
+
+        return applicable_operators
+
     def move_agent(self, agent_id, action):
         """
-        Move an agent according to the given action (0: up, 1: down, 2: left, 3: right).
+        Move an agent according to the given action (0: left, 1: right, 2: down, 3: up).
         """
         x, y = self.agent_info[agent_id]['location']
-        
-         # Check if the agent is at a pickup location
-        if (x, y) in self.pickup_locations:
-            pickup_index = self.pickup_locations.index((x, y))
-            # Pick up a block if available
-            if self.pickup_blocks[pickup_index] > 0:
-                self.pickup_blocks[pickup_index] -= 1
-                return 'pickup'
-        
-        # Check if the agent is at a dropoff location
-        if (x, y) in self.dropoff_locations:
-            dropoff_index = self.dropoff_locations.index((x, y))
-            # Drop off a block if there is space
-            if self.dropoff_blocks[dropoff_index] < 5:
-                self.dropoff_blocks[dropoff_index] += 1
-                return 'dropoff'        
-
-        if action == 0 and x > 0:
+              
+        aplop = self.aplop(x,y)
+        if not aplop: # edge case where aplop is empty
+            return 'none' # stay still, agent is trapped
+        if action not in aplop: # action chosen not valid
+            action = random.choice(list(aplop)) # choose random action
+        if action == 0:
             x -= 1
-        elif action == 1 and x < self.grid_size - 1:
+        elif action == 1:
             x += 1
-        elif action == 2 and y > 0:
+        elif action == 2:
             y -= 1
-        elif action == 3 and y < self.grid_size - 1:
+        elif action == 3:
             y += 1
-        
-        # Check if the new position is already occupied by another agent
-        
-        ### WILL HAVE TO UPDATE REWARDS LATER FOR STAYING STILL, JUST IMPLEMENTING Q TABLE FIRST
-        for i, agent in enumerate(self.agent_info):
-            if i != agent_id and agent['location'] == (x, y):
-                return
         
         # Update agent location
         self.agent_info[agent_id]['location'] = (x, y)
         
-        return 'move'
-    
-    def step(self, actions):
-        """
-        Take a step in the environment given a list of actions for each agent.
-        """
-        rewards = [0] * self.num_agents
-        
-        # Move each agent and collect rewards
-        for i, action in enumerate(actions):
-            reward = self.move_agent(i, action)
-            if action == 0 or action == 1 or action == 2 or action == 3:
-                rewards[i] -= 1
-            
-            if reward == 'pickup':
-                rewards[i] += 13
-            elif reward == 'dropoff':
-                rewards[i] += 13
-        
-        # Check for collisions
-        for i, agent1 in enumerate(self.agent_info):
-            for j, agent2 in enumerate(self.agent_info):
-                if i != j and agent1['location'] == agent2['location']:
-                    # Reset agent locations
-                    self.agent_info = [{'location': (random.randint(0, self.grid_size - 1), random.randint(0, self.grid_size - 1)), 'color': color} for color in self.agent_colors]
-                    rewards[i] += -1
-                    rewards[j] += -1
-        
-        return rewards, self.agent_info, self.pickup_blocks, self.dropoff_blocks
+        return action
 
     def plot_world(self):
         """
@@ -122,12 +103,14 @@ class RLEnvironment:
         ax.set_aspect('equal')
         ax.invert_yaxis()  # Flip the y-axis
         plt.show()
+        
 
+np.set_printoptions(precision=3, suppress=True)
 random.seed(10)
 
 # Example usage:
 grid_size = 5
-num_actions = 4
+num_actions = 6
 env = RLEnvironment()
 # env.plot_world()
 print(env.agent_info)  # Output the current agent information
@@ -155,22 +138,54 @@ for episode in range(num_episodes):
                 agent_id = 1
             case 'black':
                 agent_id = 2
-
-        response = env.move_agent(agent_id,action)
+                
+        if (x, y) in env.pickup_locations and i['carrying'] == False:
+            pickup_index = env.pickup_locations.index((x, y))
+            # Pick up a block if there is space
+            if env.pickup_blocks[pickup_index] > 0:
+                env.pickup_blocks[pickup_index] -= 1
+                i['carrying'] = True
+                action = 4
+                # Q-LEARNING
+                q_table[action][y][x] = (1-alpha)*q_table[action][y][x] + alpha*(15+gamma*np.max(q_table[0:3,y,x])) # makes sure a' is applicable 
+                # ADD SARSA
+                
+                continue
+            else: # if pickup is empty
+                response = env.move_agent(agent_id,action)
+                
+        elif (x, y) in env.dropoff_locations and i['carrying'] == True:
+            dropoff_index = env.dropoff_locations.index((x, y))
+            # Drop off a block if there is space
+            if env.dropoff_blocks[dropoff_index] < 5:
+                env.dropoff_blocks[dropoff_index] += 1
+                i['carrying'] = False
+                action = 5
+                # Q-LEARNING
+                q_table[action][y][x] = (1-alpha)*q_table[action][y][x] + alpha*(15+gamma*np.max(q_table[0:3,y,x])) # makes sure a' is applicable
+                # ADD SARSA 
+                
+                continue
+            else: # if dropoff is full
+                response = env.move_agent(agent_id,action)
+        else:   
+            response = env.move_agent(agent_id,action)
+        if response == 'none':
+            # agent is trapped in a corner, will not update q-values
+            continue 
         new_location = i['location']
         (new_x,new_y) = new_location
-        max_q_value = np.max(q_table[:, new_x-1, new_y-1])
-        if response in ('dropoff', 'pickup') :
-            # IS WRONG BTW THE ACTION IT DROPOFF/PICKUP TAKES ARE DIFF
-            q_table[action][x-1][y-1] += alpha * (15 + gamma * max_q_value -q_table[action][x-1][y-1])
+        max_q_value = np.max(q_table[:,new_y,new_x])
+        if i['carrying'] == False:
+            max_q_value = max(max_q_value,q_table[4,new_y,new_x]) 
         else:
-            q_table[action][x-1][y-1] += alpha * (-1 + gamma * max_q_value -q_table[action][x-1][y-1])
+            max_q_value = max(max_q_value,q_table[5,new_y,new_x])
+        q_table[response][y][x] = (1-alpha)*q_table[response][y][x] + alpha*(-1+gamma*max_q_value)
+        # ADD SARSA 
+            
+
     if all(blocks == 5 for blocks in env.dropoff_blocks) and all(blocks == 0 for blocks in env.pickup_blocks):
         print("done early")
         print(q_table)
         print(episode)
         break
-
-        
-    
-    
