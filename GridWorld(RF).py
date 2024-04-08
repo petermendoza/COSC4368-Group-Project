@@ -26,25 +26,22 @@ class RLEnvironment:
         applicable_operators = set()
 
         # Check if agent can move in each direction
-        if x > 0: # Checking if agent can move left 
+        if x > 0: #move left 
             target_location = x-1
             location_vacant = all(agent['location'] != target_location for agent in self.agent_info)
             if location_vacant:
                 applicable_operators.add(0)
-                
-        if x < self.grid_size-1: # Checking if agent can move right 
+        if x < self.grid_size-1: #move right 
             target_location = x+1
             location_vacant = all(agent['location'] != target_location for agent in self.agent_info)
             if location_vacant:
-                applicable_operators.add(1) 
-                           
-        if y > 0 : # Checking if agent can move down 
+                applicable_operators.add(1)            
+        if y > 0 : #move down 
             target_location = y-1
             location_vacant = all(agent['location'] != target_location for agent in self.agent_info)
             if location_vacant:
                 applicable_operators.add(2)
-                
-        if y < self.grid_size-1: # Checking if agent move up 
+        if y < self.grid_size-1: #move up 
             target_location = y+1
             location_vacant = all(agent['location'] != target_location for agent in self.agent_info)
             if location_vacant:
@@ -56,29 +53,29 @@ class RLEnvironment:
         """
         Move an agent according to the given action (0: left, 1: right, 2: down, 3: up).
         """
-        
         x, y = self.agent_info[agent_id]['location']
               
         aplop = self.aplop(x,y)
+        
         if not aplop: # edge case where aplop is empty
             return 'none' # stay still, agent is trapped
         
         if action not in aplop: # action chosen not valid
             action = random.choice(list(aplop)) # choose random action
         
-        # Move left
+        # Move Left
         if action == 0:
             x -= 1
-            
-        # Move right
+        
+        # Move Right
         elif action == 1:
             x += 1
             
-        # Move down
+        # Move Down
         elif action == 2:
             y -= 1
-        
-        # Move up
+            
+        # Move Up
         elif action == 3:
             y += 1
         
@@ -100,8 +97,7 @@ class RLEnvironment:
         # EXPLOIT Policy
         elif (policy == 'exploit'):
             print('EXPLOIT')
-            
-            
+
     def plot_world(self):
         """
         Plot the current state of the world.
@@ -131,31 +127,21 @@ class RLEnvironment:
         ax.set_aspect('equal')
         ax.invert_yaxis()  # Flip the y-axis
         plt.show()
+        
 
 class Q_Table:
     def __init__(self, num_actions, grid_size):
         # Initialize the Q-table
         self.q_table = np.zeros((num_actions, grid_size, grid_size))
         
-    def update_q_table_qLearning(self, q_table, action, x, y, alpha, gamma, reward):
-        # Updating QTable based on q-learning 
-        self.q_table[action][y][x] = (1-alpha)*self.q_table[action][y][x] + alpha*(reward+gamma*np.max(self.q_table[0:3,y,x])) # makes sure a' is applicable 
+    #def update_q_table_qLearning(self, q_table, action, x, y, alpha, gamma, reward):
         
-    def update_q_table_sarsa(self, q_table, action, x, y, alpha, gamma):
-        # Updating QTable based on SARSA
-        # --- TODO: IMPLIMENT SARSA UPDATE Q TABLE --- 
-        self.q_table[action][y][x] = self.q_table[action][y][x] + alpha * ( ''' reward ''' + (gamma * self.q_table) ) 
-        print("SARSA")
-
 # PRANDOM
-def run_episodes(steps, env, q_table, alpha, gamma, epsilon, policy, learning):
+def PRANDOM(steps, env, q_table, alpha, gamma):
     episode_count = 0
-    
     for step_count in range(steps):
         for i in env.agent_info:
-            
-            action = env.select_action(policy, q_table, epsilon)
-            
+            action = random.randint(0,3)
             location = i['location']
             (x,y) = location
             agent_color = i['color']
@@ -169,21 +155,14 @@ def run_episodes(steps, env, q_table, alpha, gamma, epsilon, policy, learning):
                     
             if (x, y) in env.pickup_locations and i['carrying'] == False:
                 pickup_index = env.pickup_locations.index((x, y))
-                
                 # Pick up a block if there is space
                 if env.pickup_blocks[pickup_index] > 0:
                     env.pickup_blocks[pickup_index] -= 1
                     i['carrying'] = True
-                    action = 4
-                    
-                    reward = 15
-                    # --- This can be moved out of all if statements at bottom??? --- 
-                    if (learning == 'q-learning'):
-                        # Q-LEARNING
-                        q_table.update_q_table_qLearning(q_table, action, x, y, alpha, gamma, reward)
-                            
-                        # --- TODO: ADD SARSA ---
-                    # --------------------------------------------------------
+                    action = 8
+                    # Q-LEARNING
+                    q_table[action][y][x] = (1-alpha)*q_table[action][y][x] + alpha*(15+gamma*np.max(q_table[0:3,y,x])) # makes sure a' is applicable 
+                    # ADD SARSA
                     
                     continue
                 else: # if pickup is empty
@@ -195,68 +174,57 @@ def run_episodes(steps, env, q_table, alpha, gamma, epsilon, policy, learning):
                 if env.dropoff_blocks[dropoff_index] < 5:
                     env.dropoff_blocks[dropoff_index] += 1
                     i['carrying'] = False
-                    action = 5
-                    
-                    reward = 15
-                    # --- This can be moved out of all if statements at bottom??? --- 
-                    if (learning == 'q-learning'):
-                        # Q-LEARNING
-                        if i['carrying'] == True:
-                            q_table[response+4][y][x] = (1-alpha)*q_table[response+4][y][x] + alpha*(-1+gamma*max_q_value)
-                        else:
-                            q_table[response][y][x] = (1-alpha)*q_table[response][y][x] + alpha*(-1+gamma*max_q_value)
-                            
-                        # --- TODO: ADD SARSA ---
-                    # --------------------------------------------------------
+                    action = 9
+                    # Q-LEARNING
+                    q_table[action][y][x] = (1-alpha)*q_table[action][y][x] + alpha*(15+gamma*np.max(q_table[0:3,y,x])) # makes sure a' is applicable
+                    # ADD SARSA 
                     
                     continue
                 else: # if dropoff is full
                     response = env.move_agent(agent_id,action)
             else:   
                 response = env.move_agent(agent_id,action)
-                
             if response == 'none':
                 # agent is trapped in a corner, will not update q-values
                 continue 
-            
             new_location = i['location']
             (new_x,new_y) = new_location
-            max_q_value = np.max(q_table.q_table[0:3,new_y,new_x])
+            max_q_value = np.max(q_table[0:3,new_y,new_x])
+            # CHECK MAX Q VALUE FOR CARRYING OR NOT ^^^
+            # CHECK MAX Q VALUE FOR CARRYING OR NOT
+            # CHECK MAX Q VALUE FOR CARRYING OR NOT
             
             # Checks to see if pickup/dropoff in next state is an applicable action for calculating q_max
             if i['carrying'] == False and (new_x, new_y) in env.pickup_locations:
                 pickup_index = env.pickup_locations.index((new_x, new_y))
                 if env.pickup_blocks[pickup_index] > 0:
-                    max_q_value = max(max_q_value,q_table.q_table[4,new_y,new_x]) 
-                    
+                    max_q_value = max(max_q_value,q_table[4,new_y,new_x]) 
             if i['carrying'] == True and (new_x, new_y) in env.dropoff_locations:
                 dropoff_index = env.dropoff_locations.index((new_x,new_y))
                 if env.dropoff_blocks[dropoff_index] < 5:
-                    max_q_value = max(max_q_value,q_table.q_table[5,new_y,new_x])
-        
-            reward = -1
-            # --- This can be moved out of all if statements at bottom??? --- 
-            if (learning == 'q-learning'):
-                # Q-LEARNING
-                q_table.update_q_table_qLearning(q_table, action, x, y, alpha, gamma, reward)
+                    max_q_value = max(max_q_value,q_table[5,new_y,new_x])
                     
-                # --- TODO: ADD SARSA ---
-            # --------------------------------------------------------
+            # CHECK MAX Q VALUE FOR CARRYING OR NOT ^^^
+            # CHECK MAX Q VALUE FOR CARRYING OR NOT
+            # CHECK MAX Q VALUE FOR CARRYING OR NOT
+            
+            if i['carrying'] == True:
+                q_table[response+4][y][x] = (1-alpha)*q_table[response+4][y][x] + alpha*(-1+gamma*max_q_value)
+            else:
+                q_table[response][y][x] = (1-alpha)*q_table[response][y][x] + alpha*(-1+gamma*max_q_value)
+            # ADD SARSA 
                 
 
         if all(blocks == 5 for blocks in env.dropoff_blocks) and all(blocks == 0 for blocks in env.pickup_blocks):
             # Resetting pickup and dropoff
             for i in range(len(env.dropoff_blocks)):
                 env.dropoff_blocks[i] = 0
-                
             for i in range(len(env.pickup_blocks)):
                 env.pickup_blocks[i] = 5
-                
             episode_count += 1
-            
     return episode_count
             
-def PEXPLOIT(steps, env, q_table, alpha, gamma, epsilon):
+def PEXPLOIT(steps, env, q_table, alpha, gamma,epsilon):
     episode_count = 0
     for step_count in range(steps):
         for i in env.agent_info:
@@ -308,17 +276,19 @@ def PEXPLOIT(steps, env, q_table, alpha, gamma, epsilon):
                 continue 
             new_location = i['location']
             (new_x,new_y) = new_location
+            
+            # CHECK MAX Q VALUE FOR CARRYING TOO
             max_q_value = np.max(q_table[0:3,new_y,new_x])
             
             # Checks to see if pickup/dropoff in next state is an applicable action for calculating q_max
             if i['carrying'] == False and (new_x, new_y) in env.pickup_locations:
                 pickup_index = env.pickup_locations.index((new_x, new_y))
                 if env.pickup_blocks[pickup_index] > 0:
-                    max_q_value = max(max_q_value,q_table[4,new_y,new_x]) 
+                    max_q_value = max(max_q_value,q_table[8,new_y,new_x]) 
             if i['carrying'] == True and (new_x, new_y) in env.dropoff_locations:
                 dropoff_index = env.dropoff_locations.index((new_x,new_y))
                 if env.dropoff_blocks[dropoff_index] < 5:
-                    max_q_value = max(max_q_value,q_table[5,new_y,new_x])
+                    max_q_value = max(max_q_value,q_table[9,new_y,new_x])
         
             q_table[response][y][x] = (1-alpha)*q_table[response][y][x] + alpha*(-1+gamma*max_q_value)
             # ADD SARSA 
@@ -333,33 +303,30 @@ def PEXPLOIT(steps, env, q_table, alpha, gamma, epsilon):
             episode_count += 1
     return episode_count
 
-
-# ----- MAIN ----- #
 def main():
+    
+    
     np.set_printoptions(precision=3, suppress=True)
     random.seed(10)
 
-    # Intitializing Dimensions / Grid World
-    GRID_SIZE = 5
-    NUM_ACTIONS = 6
     env = RLEnvironment()
-    
     # env.plot_world()
     print(env.agent_info)  # Output the current agent information
+
+    # Example usage:
+    grid_size = 5
+    num_actions = 10
     
     # Initialize the Q-table
-    q_table = Q_Table(6, 5)  # Create an instance of Q_Table
+    q_table = Q_Table(num_actions, grid_size)
 
     # Set hyperparameters
     alpha = 0.3  # Learning rate
     gamma = 0.5  # Discount factor
-    epsilon = .1 # Exploration vs exploitation factor
-    
+    # epsilon when incorporating pexploit later
     num_steps = 1000
-    
-    run_episodes(500, env, q_table, alpha, gamma, epsilon, 'random', 'q-learning')
-    
-    print(q_table.q_table)
+    PRANDOM(500,env,q_table,alpha,gamma)
+    print(q_table)
 
 if __name__ == "__main__":
     main()
