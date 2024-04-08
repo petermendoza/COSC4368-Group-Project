@@ -87,7 +87,21 @@ class RLEnvironment:
         
         return action
     
-
+    def select_action(self, policy, q_table):
+        
+        # RANDOM Policy
+        if (policy == 'random'):
+            random.randint(0,3)
+        
+        # GREEDY Policy
+        elif (policy == 'greedy'):
+            print('GREEDY')
+            
+        # EXPLOIT Policy
+        elif (policy == 'exploit'):
+            print('EXPLOIT')
+            
+            
     def plot_world(self):
         """
         Plot the current state of the world.
@@ -139,7 +153,8 @@ env = RLEnvironment()
 print(env.agent_info)  # Output the current agent information
 
 # Initialize the Q-table
-q_table = np.zeros((NUM_ACTIONS, GRID_SIZE, GRID_SIZE))
+q_table = Q_Table().q_table
+
 
 # Set hyperparameters
 alpha = 0.3  # Learning rate
@@ -150,7 +165,8 @@ num_episodes = 1000
 # PRANDOM
 for episode in range(num_episodes):
     for i in env.agent_info:
-        action = random.randint(0,3)
+        action = env.select_action('random',q_table)
+        
         location = i['location']
         (x,y) = location
         agent_color = i['color']
