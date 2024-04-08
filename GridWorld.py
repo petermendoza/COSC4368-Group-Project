@@ -127,7 +127,7 @@ def PRANDOM(steps, env, q_table, alpha, gamma):
                 if env.pickup_blocks[pickup_index] > 0:
                     env.pickup_blocks[pickup_index] -= 1
                     i['carrying'] = True
-                    action = 4
+                    action = 8
                     # Q-LEARNING
                     q_table[action][y][x] = (1-alpha)*q_table[action][y][x] + alpha*(15+gamma*np.max(q_table[0:3,y,x])) # makes sure a' is applicable 
                     # ADD SARSA
@@ -142,7 +142,7 @@ def PRANDOM(steps, env, q_table, alpha, gamma):
                 if env.dropoff_blocks[dropoff_index] < 5:
                     env.dropoff_blocks[dropoff_index] += 1
                     i['carrying'] = False
-                    action = 5
+                    action = 9
                     # Q-LEARNING
                     q_table[action][y][x] = (1-alpha)*q_table[action][y][x] + alpha*(15+gamma*np.max(q_table[0:3,y,x])) # makes sure a' is applicable
                     # ADD SARSA 
@@ -158,6 +158,9 @@ def PRANDOM(steps, env, q_table, alpha, gamma):
             new_location = i['location']
             (new_x,new_y) = new_location
             max_q_value = np.max(q_table[0:3,new_y,new_x])
+            # CHECK MAX Q VALUE FOR CARRYING OR NOT ^^^
+            # CHECK MAX Q VALUE FOR CARRYING OR NOT
+            # CHECK MAX Q VALUE FOR CARRYING OR NOT
             
             # Checks to see if pickup/dropoff in next state is an applicable action for calculating q_max
             if i['carrying'] == False and (new_x, new_y) in env.pickup_locations:
@@ -168,8 +171,15 @@ def PRANDOM(steps, env, q_table, alpha, gamma):
                 dropoff_index = env.dropoff_locations.index((new_x,new_y))
                 if env.dropoff_blocks[dropoff_index] < 5:
                     max_q_value = max(max_q_value,q_table[5,new_y,new_x])
-        
-            q_table[response][y][x] = (1-alpha)*q_table[response][y][x] + alpha*(-1+gamma*max_q_value)
+                    
+            # CHECK MAX Q VALUE FOR CARRYING OR NOT ^^^
+            # CHECK MAX Q VALUE FOR CARRYING OR NOT
+            # CHECK MAX Q VALUE FOR CARRYING OR NOT
+            
+            if i['carrying'] == True:
+                q_table[response+4][y][x] = (1-alpha)*q_table[response+4][y][x] + alpha*(-1+gamma*max_q_value)
+            else:
+                q_table[response][y][x] = (1-alpha)*q_table[response][y][x] + alpha*(-1+gamma*max_q_value)
             # ADD SARSA 
                 
 
@@ -234,17 +244,19 @@ def PEXPLOIT(steps, env, q_table, alpha, gamma,epsilon):
                 continue 
             new_location = i['location']
             (new_x,new_y) = new_location
+            
+            # CHECK MAX Q VALUE FOR CARRYING TOO
             max_q_value = np.max(q_table[0:3,new_y,new_x])
             
             # Checks to see if pickup/dropoff in next state is an applicable action for calculating q_max
             if i['carrying'] == False and (new_x, new_y) in env.pickup_locations:
                 pickup_index = env.pickup_locations.index((new_x, new_y))
                 if env.pickup_blocks[pickup_index] > 0:
-                    max_q_value = max(max_q_value,q_table[4,new_y,new_x]) 
+                    max_q_value = max(max_q_value,q_table[8,new_y,new_x]) 
             if i['carrying'] == True and (new_x, new_y) in env.dropoff_locations:
                 dropoff_index = env.dropoff_locations.index((new_x,new_y))
                 if env.dropoff_blocks[dropoff_index] < 5:
-                    max_q_value = max(max_q_value,q_table[5,new_y,new_x])
+                    max_q_value = max(max_q_value,q_table[9,new_y,new_x])
         
             q_table[response][y][x] = (1-alpha)*q_table[response][y][x] + alpha*(-1+gamma*max_q_value)
             # ADD SARSA 
@@ -269,7 +281,7 @@ def main():
 
     # Example usage:
     grid_size = 5
-    num_actions = 6
+    num_actions = 10
     # Initialize the Q-table
     q_table = np.zeros((num_actions, grid_size, grid_size))
 
