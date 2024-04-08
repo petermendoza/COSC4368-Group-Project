@@ -26,22 +26,25 @@ class RLEnvironment:
         applicable_operators = set()
 
         # Check if agent can move in each direction
-        if x > 0: #move left 
+        if x > 0: # Checking if agent can move left 
             target_location = x-1
             location_vacant = all(agent['location'] != target_location for agent in self.agent_info)
             if location_vacant:
                 applicable_operators.add(0)
-        if x < self.grid_size-1: #move right 
+                
+        if x < self.grid_size-1: # Checking if agent can move right 
             target_location = x+1
             location_vacant = all(agent['location'] != target_location for agent in self.agent_info)
             if location_vacant:
-                applicable_operators.add(1)            
-        if y > 0 : #move down 
+                applicable_operators.add(1) 
+                           
+        if y > 0 : # Checking if agent can move down 
             target_location = y-1
             location_vacant = all(agent['location'] != target_location for agent in self.agent_info)
             if location_vacant:
                 applicable_operators.add(2)
-        if y < self.grid_size-1: #move up 
+                
+        if y < self.grid_size-1: # Checking if agent move up 
             target_location = y+1
             location_vacant = all(agent['location'] != target_location for agent in self.agent_info)
             if location_vacant:
@@ -53,19 +56,29 @@ class RLEnvironment:
         """
         Move an agent according to the given action (0: left, 1: right, 2: down, 3: up).
         """
+        
         x, y = self.agent_info[agent_id]['location']
               
         aplop = self.aplop(x,y)
         if not aplop: # edge case where aplop is empty
             return 'none' # stay still, agent is trapped
+        
         if action not in aplop: # action chosen not valid
             action = random.choice(list(aplop)) # choose random action
+        
+        # Move left
         if action == 0:
             x -= 1
+            
+        # Move right
         elif action == 1:
             x += 1
+            
+        # Move down
         elif action == 2:
             y -= 1
+        
+        # Move up
         elif action == 3:
             y += 1
         
@@ -73,6 +86,7 @@ class RLEnvironment:
         self.agent_info[agent_id]['location'] = (x, y)
         
         return action
+    
 
     def plot_world(self):
         """
@@ -103,20 +117,29 @@ class RLEnvironment:
         ax.set_aspect('equal')
         ax.invert_yaxis()  # Flip the y-axis
         plt.show()
+
+class Q_Table:
+    def __init__(self):
+        # Initialize the Q-table
+        self.q_table = np.zeros((NUM_ACTIONS, GRID_SIZE, GRID_SIZE))
         
+        
+# ----- MAIN ----- #
 
 np.set_printoptions(precision=3, suppress=True)
 random.seed(10)
 
-# Example usage:
-grid_size = 5
-num_actions = 6
+# Intitializing Dimensions / Grid World
+GRID_SIZE = 5
+NUM_ACTIONS = 6
 env = RLEnvironment()
+
+# Plotting Grid
 # env.plot_world()
 print(env.agent_info)  # Output the current agent information
 
 # Initialize the Q-table
-q_table = np.zeros((num_actions, grid_size, grid_size))
+q_table = np.zeros((NUM_ACTIONS, GRID_SIZE, GRID_SIZE))
 
 # Set hyperparameters
 alpha = 0.3  # Learning rate
@@ -175,7 +198,9 @@ for episode in range(num_episodes):
             continue 
         new_location = i['location']
         (new_x,new_y) = new_location
+        
         print(agent_color, (new_x,new_y))
+        
         max_q_value = np.max(q_table[:,new_y,new_x])
         if i['carrying'] == False:
             max_q_value = max(max_q_value,q_table[4,new_y,new_x]) 
