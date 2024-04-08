@@ -87,7 +87,7 @@ class RLEnvironment:
         
         return action
     
-    def select_action(self, policy, q_table):
+    def select_action(self, policy, q_table, epsilon):
         
         # RANDOM Policy
         if (policy == 'random'):
@@ -148,12 +148,14 @@ class Q_Table:
             print("SARSA")
 
 # PRANDOM
-def PRANDOM(steps, env, q_table, q_table_instance, alpha, gamma, policy):
+def run_episodes(steps, env, q_table, q_table_instance, alpha, gamma, policy):
     episode_count = 0
     
     for step_count in range(steps):
         for i in env.agent_info:
+            
             action = env.select_action(policy,q_table)
+            
             location = i['location']
             (x,y) = location
             agent_color = i['color']
@@ -177,8 +179,7 @@ def PRANDOM(steps, env, q_table, q_table_instance, alpha, gamma, policy):
                     # Q-LEARNING
                     q_table_instance.update_q_table(q_table, action, x, y, alpha, gamma, 'q-learning')
                     
-                    # SARSA 
-                    q_table_instance.update_q_table(q_table, action, x, y, alpha, gamma, 'sarsa')
+                    # --- TODO: ADD SARSA ---
                     
                     continue
                 else: # if pickup is empty
@@ -195,8 +196,7 @@ def PRANDOM(steps, env, q_table, q_table_instance, alpha, gamma, policy):
                     # Q-LEARNING
                     q_table_instance.update_q_table(q_table, action, x, y, alpha, gamma, 'q-learning')
                     
-                    # SARSA 
-                    q_table_instance.update_q_table(q_table, action, x, y, alpha, gamma, 'sarsa')
+                    # --- TODO: ADD SARSA ---
                     
                     continue
                 else: # if dropoff is full
@@ -217,22 +217,27 @@ def PRANDOM(steps, env, q_table, q_table_instance, alpha, gamma, policy):
                 pickup_index = env.pickup_locations.index((new_x, new_y))
                 if env.pickup_blocks[pickup_index] > 0:
                     max_q_value = max(max_q_value,q_table[4,new_y,new_x]) 
+                    
             if i['carrying'] == True and (new_x, new_y) in env.dropoff_locations:
                 dropoff_index = env.dropoff_locations.index((new_x,new_y))
                 if env.dropoff_blocks[dropoff_index] < 5:
                     max_q_value = max(max_q_value,q_table[5,new_y,new_x])
         
             q_table[response][y][x] = (1-alpha)*q_table[response][y][x] + alpha*(-1+gamma*max_q_value)
-            # ADD SARSA 
+            
+            # --- TODO: ADD SARSA ---
                 
 
         if all(blocks == 5 for blocks in env.dropoff_blocks) and all(blocks == 0 for blocks in env.pickup_blocks):
             # Resetting pickup and dropoff
             for i in range(len(env.dropoff_blocks)):
                 env.dropoff_blocks[i] = 0
+                
             for i in range(len(env.pickup_blocks)):
                 env.pickup_blocks[i] = 5
+                
             episode_count += 1
+            
     return episode_count
             
 def PEXPLOIT(steps, env, q_table, alpha, gamma,epsilon):
@@ -337,7 +342,7 @@ def main():
     
     num_steps = 1000
     
-    PRANDOM(500, env, q_table, q_table_instance, alpha, gamma, 'random')
+    run_episodes(500, env, q_table, q_table_instance, alpha, gamma, 'random')
     
     print(q_table)
 
