@@ -153,6 +153,7 @@ def PRANDOM(steps, env, q_table, alpha, gamma, epsilon, policy, learning):
             
             location = i['location']
             (x, y) = location
+
             agent_color = i['color']
             match agent_color:
                 case 'red':
@@ -169,16 +170,11 @@ def PRANDOM(steps, env, q_table, alpha, gamma, epsilon, policy, learning):
                 # If there is a block at the location: PICK UP
                 if env.pickup_blocks[pickup_index] > 0:
                     env.pickup_blocks[pickup_index] -= 1
+                    
                     i['carrying'] = True
                     action = 8
-                    
-                    # Q-LEARNING
-                    # Uses the q-tables of up/down/left/right with block state, 4:7
-                    q_table[action][y][x] = (1-alpha)*q_table[action][y][x] + alpha*(15+gamma*np.max(q_table[4:7, y, x]))  # makes sure a' is applicable
-                    
-                    # ADD SARSA
-
-                    continue
+                    reward = 15
+                    max_q_value = np.max(q_table[4:7, y, x])
                 
                 # If there is not a block at the location: MOVE
                 else:  
@@ -192,16 +188,10 @@ def PRANDOM(steps, env, q_table, alpha, gamma, epsilon, policy, learning):
                 if env.dropoff_blocks[dropoff_index] < 5:
                     env.dropoff_blocks[dropoff_index] += 1
                     i['carrying'] = False
+                    
                     action = 9
-                    
-                    # Q-LEARNING
-                    # Uses the q-tables of up/down/left/right without block state, 0:3
-                    q_table[action][y][x] = (1-alpha)*q_table[action][y][x] + alpha*(
-                        15+gamma*np.max(q_table[0:3, y, x]))  # makes sure a' is applicable
-                    
-                    # ADD SARSA
-
-                    continue
+                    reward = 15
+                    max_q_value = np.max(q_table[0:3, y, x])
                 
                 # If there is no space to drop off a block then: MOVE
                 else: 
@@ -209,6 +199,7 @@ def PRANDOM(steps, env, q_table, alpha, gamma, epsilon, policy, learning):
                     response = env.move_agent(agent_id, action) + 4
                     
             else:
+                
                 if i['carrying'] == False:
                     response = env.move_agent(agent_id, action)
                 else:
@@ -220,6 +211,14 @@ def PRANDOM(steps, env, q_table, alpha, gamma, epsilon, policy, learning):
             
             new_location = i['location']
             (new_x, new_y) = new_location
+            
+            if (action == 8 or action == 9):
+                # Q Learning for drop off and pick up
+                q_table[action][y][x] = (1-alpha)*q_table[action][y][x] + alpha*(reward+gamma*max_q_value)
+                
+                # --- TODO: ADD SARSA
+                continue
+            
             if i['carrying'] == False:
                 max_q_value = np.max(q_table[0:3, new_y, new_x])
             else:
