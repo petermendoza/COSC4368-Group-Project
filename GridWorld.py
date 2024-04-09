@@ -102,11 +102,11 @@ class RLEnvironment:
             
             # Choose action with max Q-value based on no holding block
             if (carrying == False):
-                max_q_action = np.argmax(q_table[0:3, y, x]) 
+                max_q_action = np.argmax(q_table[0:4, y, x]) 
                 
             # Choose action with max Q-value based on holding block
             else:
-                max_q_action = np.argmax(q_table[4:7, y, x])
+                max_q_action = np.argmax(q_table[4:8, y, x])
                 
             return max_q_action
             
@@ -114,11 +114,11 @@ class RLEnvironment:
             
             # Choose action with max Q-value based on no holding block
             if (carrying == False):
-                max_q_action = np.argmax(q_table[0:3, y, x]) 
+                max_q_action = np.argmax(q_table[0:4, y, x]) 
                 
             # Choose action with max Q-value based on holding block
             else:
-                max_q_action = np.argmax(q_table[4:7, y, x])
+                max_q_action = np.argmax(q_table[4:8, y, x])
                 
             if random.uniform(0,1) < epsilon:
                 return random.randint(0, 3)
@@ -167,12 +167,6 @@ def simulate_episodes(steps, env, q_table, alpha, gamma, epsilon, policy, learni
     
     for step_count in range(steps):
         for i in env.agent_info:
-            
-            location = i['location']
-            (x, y) = location
-            
-            # Selects action based on policy choosen
-            action = env.select_action(policy, q_table, epsilon, i['carrying'], x, y)
 
             agent_color = i['color']
             match agent_color:
@@ -182,6 +176,13 @@ def simulate_episodes(steps, env, q_table, alpha, gamma, epsilon, policy, learni
                     agent_id = 1
                 case 'black':
                     agent_id = 2
+                    
+            location = i['location']
+            (x, y) = location
+            
+            # Selects action based on policy choosen
+            action = env.select_action(policy, q_table, epsilon, i['carrying'], x, y)
+
 
             # If agent is in a pickup location and is not carrying a block
             if (x, y) in env.pickup_locations and i['carrying'] == False:
@@ -303,7 +304,7 @@ def main():
     epsilon = 0.1 # Exploration vs Exploitation factor
 
     num_steps = 1000
-    simulate_episodes(500, env, q_table, alpha, gamma, epsilon, 'exploit', 'q-learning')
+    simulate_episodes(500, env, q_table, alpha, gamma, epsilon, 'greedy', 'q-learning')
     
     print(q_table)
 
