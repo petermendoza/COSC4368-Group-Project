@@ -31,16 +31,19 @@ class RLEnvironment:
             location_vacant = all(agent['location'] != target_location for agent in self.agent_info)
             if location_vacant:
                 applicable_operators.add(0)
+                
         if x < self.grid_size-1: #move right 
             target_location = x+1
             location_vacant = all(agent['location'] != target_location for agent in self.agent_info)
             if location_vacant:
-                applicable_operators.add(1)            
+                applicable_operators.add(1)       
+                     
         if y > 0 : #move down 
             target_location = y-1
             location_vacant = all(agent['location'] != target_location for agent in self.agent_info)
             if location_vacant:
                 applicable_operators.add(2)
+                
         if y < self.grid_size-1: #move up 
             target_location = y+1
             location_vacant = all(agent['location'] != target_location for agent in self.agent_info)
@@ -137,14 +140,17 @@ class Q_Table:
     #def update_q_table_qLearning(self, q_table, action, x, y, alpha, gamma, reward):
         
 # PRANDOM
-def PRANDOM(steps, env, q_table, alpha, gamma):
+def PRANDOM(steps, env, q_table, alpha, gamma, epsilon, policy, learning):
     episode_count = 0
     for step_count in range(steps):
         for i in env.agent_info:
-            action = random.randint(0,3)
+            
+            action = env.select_action(policy, q_table, epsilon)
+            
             location = i['location']
             (x,y) = location
             agent_color = i['color']
+            
             match agent_color:
                 case 'red':
                     agent_id = 0
@@ -160,8 +166,9 @@ def PRANDOM(steps, env, q_table, alpha, gamma):
                     env.pickup_blocks[pickup_index] -= 1
                     i['carrying'] = True
                     action = 8
+                    
                     # Q-LEARNING
-                    q_table[action][y][x] = (1-alpha)*q_table[action][y][x] + alpha*(15+gamma*np.max(q_table[0:3,y,x])) # makes sure a' is applicable 
+                    q_table.q_table[action][y][x] = (1-alpha)*q_table.q_table[action][y][x] + alpha*(15+gamma*np.max(q_table.q_table[0:3,y,x])) # makes sure a' is applicable 
                     # ADD SARSA
                     
                     continue
@@ -176,7 +183,7 @@ def PRANDOM(steps, env, q_table, alpha, gamma):
                     i['carrying'] = False
                     action = 9
                     # Q-LEARNING
-                    q_table[action][y][x] = (1-alpha)*q_table[action][y][x] + alpha*(15+gamma*np.max(q_table[0:3,y,x])) # makes sure a' is applicable
+                    q_table.q_table[action][y][x] = (1-alpha)*q_table.q_table[action][y][x] + alpha*(15+gamma*np.max(q_table.q_table[0:3,y,x])) # makes sure a' is applicable
                     # ADD SARSA 
                     
                     continue
@@ -184,12 +191,14 @@ def PRANDOM(steps, env, q_table, alpha, gamma):
                     response = env.move_agent(agent_id,action)
             else:   
                 response = env.move_agent(agent_id,action)
+            
             if response == 'none':
                 # agent is trapped in a corner, will not update q-values
                 continue 
+            
             new_location = i['location']
             (new_x,new_y) = new_location
-            max_q_value = np.max(q_table[0:3,new_y,new_x])
+            max_q_value = np.max(q_table.q_table[0:3,new_y,new_x])
             # CHECK MAX Q VALUE FOR CARRYING OR NOT ^^^
             # CHECK MAX Q VALUE FOR CARRYING OR NOT
             # CHECK MAX Q VALUE FOR CARRYING OR NOT
@@ -198,20 +207,21 @@ def PRANDOM(steps, env, q_table, alpha, gamma):
             if i['carrying'] == False and (new_x, new_y) in env.pickup_locations:
                 pickup_index = env.pickup_locations.index((new_x, new_y))
                 if env.pickup_blocks[pickup_index] > 0:
-                    max_q_value = max(max_q_value,q_table[4,new_y,new_x]) 
+                    max_q_value = max(max_q_value,q_table.q_table[4,new_y,new_x]) 
+                    
             if i['carrying'] == True and (new_x, new_y) in env.dropoff_locations:
                 dropoff_index = env.dropoff_locations.index((new_x,new_y))
                 if env.dropoff_blocks[dropoff_index] < 5:
-                    max_q_value = max(max_q_value,q_table[5,new_y,new_x])
+                    max_q_value = max(max_q_value,q_table.q_table[5,new_y,new_x])
                     
             # CHECK MAX Q VALUE FOR CARRYING OR NOT ^^^
             # CHECK MAX Q VALUE FOR CARRYING OR NOT
             # CHECK MAX Q VALUE FOR CARRYING OR NOT
             
             if i['carrying'] == True:
-                q_table[response+4][y][x] = (1-alpha)*q_table[response+4][y][x] + alpha*(-1+gamma*max_q_value)
+                q_table.q_table[response+4][y][x] = (1-alpha)*q_table.q_table[response+4][y][x] + alpha*(-1+gamma*max_q_value)
             else:
-                q_table[response][y][x] = (1-alpha)*q_table[response][y][x] + alpha*(-1+gamma*max_q_value)
+                q_table.q_table[response][y][x] = (1-alpha)*q_table.q_table[response][y][x] + alpha*(-1+gamma*max_q_value)
             # ADD SARSA 
                 
 
@@ -303,6 +313,8 @@ def PEXPLOIT(steps, env, q_table, alpha, gamma,epsilon):
             episode_count += 1
     return episode_count
 
+# ----- MAIN -----
+
 def main():
     
     
@@ -323,10 +335,12 @@ def main():
     # Set hyperparameters
     alpha = 0.3  # Learning rate
     gamma = 0.5  # Discount factor
-    # epsilon when incorporating pexploit later
+    epsilon = 0.1 # Exploration vs Explotation factor
+
     num_steps = 1000
-    PRANDOM(500,env,q_table,alpha,gamma)
-    print(q_table)
+    PRANDOM(500, env, q_table, alpha, gamma, epsilon, 'random', 'q-learning')
+    
+    print(q_table.q_table)
 
 if __name__ == "__main__":
     main()
