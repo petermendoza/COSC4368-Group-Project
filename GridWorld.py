@@ -108,14 +108,22 @@ class RLEnvironment:
             else:
                 max_q_action = np.argmax(q_table[4:7, y, x])
                 
-            if random.random() < epsilon:
+            return max_q_action
+            
+        elif (policy == 'exploit'):
+            
+            # Choose action with max Q-value based on no holding block
+            if (carrying == False):
+                max_q_action = np.argmax(q_table[0:3, y, x]) 
+                
+            # Choose action with max Q-value based on holding block
+            else:
+                max_q_action = np.argmax(q_table[4:7, y, x])
+                
+            if random.uniform(0,1) < epsilon:
                 return random.randint(0, 3)
             else:
-                return max_q_action
-            
-        # --- TODO: EXPLOIT Policy ---
-        elif (policy == 'exploit'):
-            print('EXPLOIT')
+                return max_q_action   
 
     def plot_world(self):
         """
@@ -154,7 +162,7 @@ class RLEnvironment:
 
 
 # Simulate Episodes
-def simulate_Episodes(steps, env, q_table, alpha, gamma, epsilon, policy, learning):
+def simulate_episodes(steps, env, q_table, alpha, gamma, epsilon, policy, learning):
     episode_count = 0
     
     for step_count in range(steps):
@@ -296,7 +304,7 @@ def main():
     epsilon = 0.1 # Exploration vs Exploitation factor
 
     num_steps = 1000
-    simulate_Episodes(500, env, q_table, alpha, gamma, epsilon, 'random', 'sarsa')
+    simulate_episodes(500, env, q_table, alpha, gamma, epsilon, 'random', 'q-learning')
     
     print(q_table)
 
