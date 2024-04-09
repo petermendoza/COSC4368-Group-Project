@@ -17,8 +17,7 @@ class RLEnvironment:
 
         # Initialize agent locations and colors
         self.agent_info = [{'location': (3, 3), 'color': 'red', 'carrying': False},  # Agent ID 0
-                           {'location': (4, 3), 'color': 'blue',
-                            'carrying': False},  # Agent ID 1
+                           {'location': (4, 3), 'color': 'blue', 'carrying': False},  # Agent ID 1
                            {'location': (1, 3), 'color': 'black', 'carrying': False}]  # Agent ID 2
 
         # Initialize block counts at pickup and dropoff locations
@@ -35,18 +34,21 @@ class RLEnvironment:
                 agent['location'] != target_location for agent in self.agent_info)
             if location_vacant:
                 applicable_operators.add(0)
+                
         if x < self.grid_size-1:  # move right
             target_location = x+1
             location_vacant = all(
                 agent['location'] != target_location for agent in self.agent_info)
             if location_vacant:
                 applicable_operators.add(1)
+                
         if y > 0:  # move down
             target_location = y-1
             location_vacant = all(
                 agent['location'] != target_location for agent in self.agent_info)
             if location_vacant:
                 applicable_operators.add(2)
+                
         if y < self.grid_size-1:  # move up
             target_location = y+1
             location_vacant = all(
@@ -57,22 +59,30 @@ class RLEnvironment:
         return applicable_operators
 
     def move_agent(self, agent_id, action):
-        """
-        Move an agent according to the given action (0: left, 1: right, 2: down, 3: up).
-        """
+
         x, y = self.agent_info[agent_id]['location']
 
         aplop = self.aplop(x, y)
+        
         if not aplop:  # edge case where aplop is empty
             return 'none'  # stay still, agent is trapped
+        
         if action not in aplop:  # action chosen not valid
             action = random.choice(list(aplop))  # choose random action
+        
+        # Move Left
         if action == 0:
             x -= 1
+        
+        # Move Right    
         elif action == 1:
             x += 1
+            
+        # Move Down
         elif action == 2:
             y -= 1
+            
+        # Move Up
         elif action == 3:
             y += 1
 
@@ -80,6 +90,32 @@ class RLEnvironment:
         self.agent_info[agent_id]['location'] = (x, y)
 
         return action
+    
+    def select_action(self, policy, q_table, epsilon, carrying, x, y):
+        
+        # RANDOM Policy
+        if (policy == 'random'):
+            return random.randint(0,3)
+        
+        # GREEDY Policy
+        elif (policy == 'greedy'):
+            
+            # Choose action with max Q-value based on no holding block
+            if (carrying == False):
+                max_q_action = np.argmax(q_table[0:3, y, x]) 
+                
+            # Choose action with max Q-value based on holding block
+            else:
+                max_q_action = np.argmax(q_table[4:7, y, x])
+                
+            if random.random() < epsilon:
+                return random.randint(0, 3)
+            else:
+                return max_q_action
+            
+        # --- TODO: EXPLOIT Policy ---
+        elif (policy == 'exploit'):
+            print('EXPLOIT')
 
     def plot_world(self):
         """
@@ -116,16 +152,20 @@ class RLEnvironment:
         ax.invert_yaxis()  # Flip the y-axis
         plt.show()
 
-# PRANDOM
 
-
-def PRANDOM(steps, env, q_table, alpha, gamma):
+# Simulate Episodes
+def simulate_Episodes(steps, env, q_table, alpha, gamma, epsilon, policy, learning):
     episode_count = 0
+    
     for step_count in range(steps):
         for i in env.agent_info:
-            action = random.randint(0, 3)
+            
             location = i['location']
             (x, y) = location
+            
+            # Selects action based on policy choosen
+            action = env.select_action(policy, q_table, epsilon, i['carrying'], x, y)
+
             agent_color = i['color']
             match agent_color:
                 case 'red':
@@ -135,80 +175,105 @@ def PRANDOM(steps, env, q_table, alpha, gamma):
                 case 'black':
                     agent_id = 2
 
+            # If agent is in a pickup location and is not carrying a block
             if (x, y) in env.pickup_locations and i['carrying'] == False:
                 pickup_index = env.pickup_locations.index((x, y))
-                # Pick up a block if there not empty
+                
+                # If there is a block at the location: PICK UP
                 if env.pickup_blocks[pickup_index] > 0:
                     env.pickup_blocks[pickup_index] -= 1
+                    
                     i['carrying'] = True
                     action = 8
-                    # Q-LEARNING
-                    # Uses the q-tables of up/down/left/right with block state, 4:7
-                    q_table[action][y][x] = (1-alpha)*q_table[action][y][x] + alpha*(
-                        15+gamma*np.max(q_table[4:7, y, x]))  # makes sure a' is applicable
-                    # ADD SARSA
+                    reward = 15
+                    max_q_value = np.max(q_table[4:7, y, x])
+                
+                # If there is not a block at the location: MOVE
+                else:  
+                    action = env.move_agent(agent_id, action)
 
-                    continue
-                else:  # if pickup is empty
-                    response = env.move_agent(agent_id, action)
-
+            # If agent is at a drop off location and is carrying a block
             elif (x, y) in env.dropoff_locations and i['carrying'] == True:
                 dropoff_index = env.dropoff_locations.index((x, y))
-                # Drop off a block if there is space
+                
+                # If there is space to drop off a block then: DROP OFF
                 if env.dropoff_blocks[dropoff_index] < 5:
                     env.dropoff_blocks[dropoff_index] += 1
                     i['carrying'] = False
+                    
                     action = 9
-                    # Q-LEARNING
-                    # Uses the q-tables of up/down/left/right without block state, 0:3
-                    q_table[action][y][x] = (1-alpha)*q_table[action][y][x] + alpha*(
-                        15+gamma*np.max(q_table[0:3, y, x]))  # makes sure a' is applicable
-                    # ADD SARSA
-
-                    continue
-                else:  # if dropoff is full
+                    reward = 15
+                    max_q_value = np.max(q_table[0:3, y, x])
+                
+                # If there is no space to drop off a block then: MOVE
+                else: 
                     # +4 because agent is currently carrying a block
-                    response = env.move_agent(agent_id, action) + 4
+                    action = env.move_agent(agent_id, action) + 4
+                    
             else:
+                
                 if i['carrying'] == False:
-                    response = env.move_agent(agent_id, action)
+                    action = env.move_agent(agent_id, action)
                 else:
-                    response = env.move_agent(agent_id, action) + 4
-            if response == 'none':
-                # agent is trapped in a corner, will not update q-values
+                    action = env.move_agent(agent_id, action) + 4
+                    
+                new_location = i['location']
+                (new_x, new_y) = new_location
+                
+                reward = -1
+                
+                if i['carrying'] == False:
+                    max_q_value = np.max(q_table[0:3, new_y, new_x])
+                else:
+                    max_q_value = np.max(q_table[4:7, new_y, new_x])
+
+                # Checks to see if pickup/dropoff in next state is an applicable action for calculating q_max
+                if i['carrying'] == False and (new_x, new_y) in env.pickup_locations:
+                    pickup_index = env.pickup_locations.index((new_x, new_y))
+                    if env.pickup_blocks[pickup_index] > 0:
+                        max_q_value = max(max_q_value, q_table[8, new_y, new_x])
+                        
+                if i['carrying'] == True and (new_x, new_y) in env.dropoff_locations:
+                    dropoff_index = env.dropoff_locations.index((new_x, new_y))
+                    if env.dropoff_blocks[dropoff_index] < 5:
+                        max_q_value = max(max_q_value, q_table[9, new_y, new_x])
+            
+            # If agent is trapped in a corner, will not update q-values
+            if action == 'none':
                 continue
-            new_location = i['location']
-            (new_x, new_y) = new_location
-            if i['carrying'] == False:
-                max_q_value = np.max(q_table[0:3, new_y, new_x])
-            else:
-                max_q_value = np.max(q_table[4:7, new_y, new_x])
+                
+            if (learning == 'q-learning'):
+                
+                # Updating Q Value based on q-learing
+                q_table[action][y][x] = (1-alpha)*q_table[action][y][x] + alpha*(reward+gamma*max_q_value)
+                
+            elif (learning == 'sarsa'):
+                
+                # --- TODO: ADD SARSA ---
+                # Get the next state and next action
+                next_location = env.agent_info[agent_id]['location']
+                next_x, next_y = next_location
+                next_carrying = i['carrying']
+                next_action = env.select_action(policy, q_table, epsilon, next_carrying, next_x, next_y)
 
-            # Checks to see if pickup/dropoff in next state is an applicable action for calculating q_max
-            if i['carrying'] == False and (new_x, new_y) in env.pickup_locations:
-                pickup_index = env.pickup_locations.index((new_x, new_y))
-                if env.pickup_blocks[pickup_index] > 0:
-                    max_q_value = max(max_q_value, q_table[8, new_y, new_x])
-            if i['carrying'] == True and (new_x, new_y) in env.dropoff_locations:
-                dropoff_index = env.dropoff_locations.index((new_x, new_y))
-                if env.dropoff_blocks[dropoff_index] < 5:
-                    max_q_value = max(max_q_value, q_table[9, new_y, new_x])
+                # Calculate the next state-action pair Q-value
+                if next_carrying == False:
+                    next_max_q_value = q_table[next_action][next_y][next_x]
+                else:
+                    next_max_q_value = q_table[next_action + 4][next_y][next_x]
 
-            q_table[response][y][x] = (1-alpha)*q_table[response
-                                                            ][y][x] + alpha*(-1+gamma*max_q_value)
+                # Update the Q-value for the current state-action pair using the SARSA update rule
+                q_table[action][y][x] = q_table[action][y][x] + alpha * (reward + gamma * next_max_q_value - q_table[action][y][x])
 
-            # ADD SARSA
-
+        # Resetting pickup and dropoff once all blocks have been picked up and dropped off
         if all(blocks == 5 for blocks in env.dropoff_blocks) and all(blocks == 0 for blocks in env.pickup_blocks):
-            # Resetting pickup and dropoff
             for i in range(len(env.dropoff_blocks)):
                 env.dropoff_blocks[i] = 0
             for i in range(len(env.pickup_blocks)):
                 env.pickup_blocks[i] = 5
             episode_count += 1
+            
     return episode_count
-
-
 
 def main():
     np.set_printoptions(precision=3, suppress=True)
@@ -221,15 +286,18 @@ def main():
     # Example usage:
     grid_size = 5
     num_actions = 10
+    
     # Initialize the Q-table
     q_table = np.zeros((num_actions, grid_size, grid_size))
 
     # Set hyperparameters
-    alpha = 0.3  # Learning rate
+    alpha = 0.3  # Learning rates
     gamma = 0.5  # Discount factor
-    # epsilon when incorporating pexploit later
+    epsilon = 0.1 # Exploration vs Exploitation factor
+
     num_steps = 1000
-    PRANDOM(500, env, q_table, alpha, gamma)
+    simulate_Episodes(500, env, q_table, alpha, gamma, epsilon, 'random', 'sarsa')
+    
     print(q_table)
 
 
