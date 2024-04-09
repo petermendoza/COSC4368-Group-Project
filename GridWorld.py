@@ -113,7 +113,7 @@ class RLEnvironment:
             else:
                 return max_q_action
             
-        # EXPLOIT Policy
+        # --- TODO: EXPLOIT Policy ---
         elif (policy == 'exploit'):
             print('EXPLOIT')
 
