@@ -91,7 +91,7 @@ class RLEnvironment:
 
         return action
     
-    def select_action(self, policy, q_table, epsilon):
+    def select_action(self, policy, q_table, epsilon, carrying, x, y):
         
         # RANDOM Policy
         if (policy == 'random'):
@@ -99,7 +99,19 @@ class RLEnvironment:
         
         # GREEDY Policy
         elif (policy == 'greedy'):
-            print('GREEDY')
+            
+            # Choose action with max Q-value based on no holding block
+            if (carrying == False):
+                max_q_action = np.argmax(q_table[0:3, y, x]) 
+                
+            # Choose action with max Q-value based on holding block
+            else:
+                max_q_action = np.argmax(q_table[4:7, y, x])
+                
+            if random.random() < epsilon:
+                return random.randint(0, 3)
+            else:
+                return max_q_action
             
         # EXPLOIT Policy
         elif (policy == 'exploit'):
@@ -148,11 +160,11 @@ def simulate_Episodes(steps, env, q_table, alpha, gamma, epsilon, policy, learni
     for step_count in range(steps):
         for i in env.agent_info:
             
-            # Selects action based on policy choosen
-            action = env.select_action(policy, q_table, epsilon)
-            
             location = i['location']
             (x, y) = location
+            
+            # Selects action based on policy choosen
+            action = env.select_action(policy, q_table, epsilon, i['carrying'], x, y)
 
             agent_color = i['color']
             match agent_color:
@@ -236,6 +248,7 @@ def simulate_Episodes(steps, env, q_table, alpha, gamma, epsilon, policy, learni
                 q_table[action][y][x] = (1-alpha)*q_table[action][y][x] + alpha*(reward+gamma*max_q_value)
                 
             elif (learning == 'sarsa'):
+                
                 # --- TODO: ADD SARSA ---
                 print("sarsa")
 
@@ -260,6 +273,7 @@ def main():
     # Example usage:
     grid_size = 5
     num_actions = 10
+    
     # Initialize the Q-table
     q_table = np.zeros((num_actions, grid_size, grid_size))
 
