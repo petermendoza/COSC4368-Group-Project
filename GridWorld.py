@@ -257,7 +257,6 @@ def simulate_episodes(steps, env, q_table, alpha, gamma, epsilon, policy, learni
                 
             elif (learning == 'sarsa'):
                 
-                # --- TODO: ADD SARSA ---
                 # Get the next state and next action
                 next_location = env.agent_info[agent_id]['location']
                 next_x, next_y = next_location
@@ -266,12 +265,12 @@ def simulate_episodes(steps, env, q_table, alpha, gamma, epsilon, policy, learni
 
                 # Calculate the next state-action pair Q-value
                 if next_carrying == False:
-                    next_max_q_value = q_table[next_action][next_y][next_x]
+                    next_q_value = q_table[next_action][next_y][next_x]
                 else:
-                    next_max_q_value = q_table[next_action + 4][next_y][next_x]
+                    next_q_value = q_table[next_action + 4][next_y][next_x]
 
                 # Update the Q-value for the current state-action pair using the SARSA update rule
-                q_table[action][y][x] = q_table[action][y][x] + alpha * (reward + gamma * next_max_q_value - q_table[action][y][x])
+                q_table[action][y][x] = q_table[action][y][x] + alpha * (reward + gamma * next_q_value - q_table[action][y][x])
 
         # Resetting pickup and dropoff once all blocks have been picked up and dropped off
         if all(blocks == 5 for blocks in env.dropoff_blocks) and all(blocks == 0 for blocks in env.pickup_blocks):
@@ -304,7 +303,7 @@ def main():
     epsilon = 0.1 # Exploration vs Exploitation factor
 
     num_steps = 1000
-    simulate_episodes(500, env, q_table, alpha, gamma, epsilon, 'random', 'q-learning')
+    simulate_episodes(500, env, q_table, alpha, gamma, epsilon, 'exploit', 'q-learning')
     
     print(q_table)
 
