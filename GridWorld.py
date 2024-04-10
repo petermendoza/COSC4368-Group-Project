@@ -173,9 +173,6 @@ class RLEnvironment:
     def visualize_Attractive_Path(self, q_table):
         nrows = 5
         ncols = 5
-
-        DropOffCell = [(0, 0), (2, 0), (3, 4)]
-        PickUpCell = [(0, 4), (1, 3), (4, 1)]
         
         data1 = np.zeros((nrows,ncols))
         data2 = np.zeros((nrows,ncols))
@@ -444,7 +441,7 @@ def main():
     epsilon = 0.1 # Exploration vs Exploitation factor
 
     num_steps = 1000
-    simulate_episodes(500, env, q_table, alpha, gamma, epsilon, 'greedy', 'q-learning')
+    simulate_episodes(500, env, q_table, alpha, gamma, epsilon, 'random', 'q-learning')
     #simulate_episodes(5000, env, q_table, alpha, gamma, epsilon, 'exploit', 'q-learning')
     
     env.visualize_Attractive_Path(q_table)
