@@ -164,7 +164,8 @@ class RLEnvironment:
 # Simulate Episodes
 def simulate_episodes(steps, env, q_table, alpha, gamma, epsilon, policy, learning):
     episode_count = 0
-    
+    # initialize agent actions which stores next action taken when using SARSA
+    agent_actions = np.full(3,-1)
     for step_count in range(steps):
         for i in env.agent_info:
 
@@ -181,7 +182,9 @@ def simulate_episodes(steps, env, q_table, alpha, gamma, epsilon, policy, learni
             (x, y) = location
             
             # Selects action based on policy choosen
-            action = env.select_action(policy, q_table, epsilon, i['carrying'], x, y)
+            action = agent_actions[agent_id]
+            if action == -1: # first iteration, no "next action" stored
+                action = env.select_action(policy, q_table, epsilon, i['carrying'], x, y)
 
 
             # If agent is in a pickup location and is not carrying a block
@@ -191,7 +194,6 @@ def simulate_episodes(steps, env, q_table, alpha, gamma, epsilon, policy, learni
                 # If there is a block at the location: PICK UP
                 if env.pickup_blocks[pickup_index] > 0:
                     env.pickup_blocks[pickup_index] -= 1
-                    
                     i['carrying'] = True
                     action = 8
                     reward = 15
@@ -209,7 +211,6 @@ def simulate_episodes(steps, env, q_table, alpha, gamma, epsilon, policy, learni
                 if env.dropoff_blocks[dropoff_index] < 5:
                     env.dropoff_blocks[dropoff_index] += 1
                     i['carrying'] = False
-                    
                     action = 9
                     reward = 15
                     max_q_value = np.max(q_table[0:3, y, x])
@@ -220,7 +221,6 @@ def simulate_episodes(steps, env, q_table, alpha, gamma, epsilon, policy, learni
                     action = env.move_agent(agent_id, action) + 4
                     
             else:
-                
                 if i['carrying'] == False:
                     action = env.move_agent(agent_id, action)
                 else:
@@ -263,6 +263,7 @@ def simulate_episodes(steps, env, q_table, alpha, gamma, epsilon, policy, learni
                 next_x, next_y = next_location
                 next_carrying = i['carrying']
                 next_action = env.select_action(policy, q_table, epsilon, next_carrying, next_x, next_y)
+                agent_actions[agent_id] = next_action
 
                 # Calculate the next state-action pair Q-value
                 if next_carrying == False:
@@ -304,7 +305,8 @@ def main():
     epsilon = 0.1 # Exploration vs Exploitation factor
 
     num_steps = 1000
-    simulate_episodes(500, env, q_table, alpha, gamma, epsilon, 'greedy', 'q-learning')
+    simulate_episodes(500, env, q_table, alpha, gamma, epsilon, 'random', 'q-learning')
+    simulate_episodes(5000, env, q_table, alpha, gamma, epsilon, 'exploit', 'q-learning')
     
     print(q_table)
 
