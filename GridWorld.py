@@ -12,6 +12,7 @@ class RLEnvironment:
         self.agent_colors = ['red', 'black', 'blue']  # Colors for the agents
 
         # Initialize pickup and dropoff locations
+        # Coordinates are x - 1 and y - 1 because we are starting index at [0 - 4] instead of [1 - 5]
         self.pickup_locations = [(0, 4), (1, 3), (4, 1)]
         self.dropoff_locations = [(0, 0), (2, 0), (3, 4)]
 
@@ -320,7 +321,7 @@ def simulate_episodes(steps, env, q_table, alpha, gamma, epsilon, policy, learni
             # Selects action based on policy choosen
             action = agent_actions[agent_id]
             if action == -1: # first iteration, no "next action" stored
-                action = env.select_action(policy, q_table, epsilon, i['carrying'], x, y)
+                action = env.select_action('random', q_table, epsilon, i['carrying'], x, y)
 
 
             # If agent is in a pickup location and is not carrying a block
@@ -337,7 +338,11 @@ def simulate_episodes(steps, env, q_table, alpha, gamma, epsilon, policy, learni
                 
                 # If there is not a block at the location: MOVE
                 else:  
-                    action = env.move_agent(agent_id, action, q_table, policy, epsilon)
+                    
+                    if step_count > 500:
+                        policy = 'random'
+                        
+                    action = env.move_agent(agent_id, action, q_table, 'random', epsilon)
 
             # If agent is at a drop off location and is carrying a block
             elif (x, y) in env.dropoff_locations and i['carrying'] == True:
@@ -353,10 +358,18 @@ def simulate_episodes(steps, env, q_table, alpha, gamma, epsilon, policy, learni
                 
                 # If there is no space to drop off a block then: MOVE
                 else: 
+                    
+                    if step_count > 500:
+                        policy = 'random'
+                    
                     # +4 because agent is currently carrying a block
                     action = env.move_agent(agent_id, action, q_table, policy, epsilon) + 4
                     
             else:
+                
+                if step_count > 500:
+                        policy = 'random'
+                
                 if i['carrying'] == False:
                     action = env.move_agent(agent_id, action, q_table, policy, epsilon)
                 else:
@@ -441,7 +454,7 @@ def main():
     epsilon = 0.1 # Exploration vs Exploitation factor
 
     num_steps = 1000
-    simulate_episodes(500, env, q_table, alpha, gamma, epsilon, 'random', 'q-learning')
+    simulate_episodes(num_steps, env, q_table, alpha, gamma, epsilon, 'random', 'q-learning')
     #simulate_episodes(5000, env, q_table, alpha, gamma, epsilon, 'exploit', 'q-learning')
     
     env.visualize_Attractive_Path(q_table)
