@@ -427,7 +427,10 @@ def main():
     random.seed(10)
 
     env = RLEnvironment()
+    
+    # Plotting GRIDWORLD Initial State
     #env.plot_world()
+    
     print(env.agent_info)  # Output the current agent information
 
     # Example usage:
@@ -437,17 +440,31 @@ def main():
     # Initialize the Q-table
     q_table = np.zeros((num_actions, grid_size, grid_size))
 
-    # Set hyperparameters
+    # Set/Change hyperparameters
     alpha = 0.3  # Learning rates
     gamma = 0.5  # Discount factor
     epsilon = 0.1 # Exploration vs Exploitation factor
 
     num_steps = 8500
     simulate_episodes(500, env, q_table, alpha, gamma, epsilon, 'random', 'q-learning')
+    
+    # Change parameters here to simulate experiments
     simulate_episodes(num_steps, env, q_table, alpha, gamma, epsilon, 'exploit', 'q-learning')
     
+    # Displays most optimal path for agents after learning
     env.visualize_Attractive_Path(q_table)
     
+    # Displays Q-Table and its values
+    # Table 0 : Left Action (without block)
+    # Table 1 : Right Action (without block)
+    # Table 2 : Up Action (without block)
+    # Table 3 : Down Action (without block)
+    # Table 4 : Left Action (with block)
+    # Table 5 : Right Action (with block)
+    # Table 6 : Up Action (with block)
+    # Table 7 : Down Action (with block)
+    # Table 8 : Pick Up Action
+    # Table 9 : Drop Off Action
     print(q_table)
 
 
