@@ -340,9 +340,9 @@ def simulate_episodes(steps, env, q_table, alpha, gamma, epsilon, policy, learni
                 else:  
                     
                     if step_count > 500:
-                        policy = 'random'
-                        
-                    action = env.move_agent(agent_id, action, q_table, 'random', epsilon)
+                        action = env.move_agent(agent_id, action, q_table, 'random', epsilon)
+                    else:  
+                        action = env.move_agent(agent_id, action, q_table, policy, epsilon)
 
             # If agent is at a drop off location and is carrying a block
             elif (x, y) in env.dropoff_locations and i['carrying'] == True:
@@ -360,20 +360,23 @@ def simulate_episodes(steps, env, q_table, alpha, gamma, epsilon, policy, learni
                 else: 
                     
                     if step_count > 500:
-                        policy = 'random'
-                    
-                    # +4 because agent is currently carrying a block
-                    action = env.move_agent(agent_id, action, q_table, policy, epsilon) + 4
+                        action = env.move_agent(agent_id, action, q_table, 'random', epsilon)
+                    else:
+                        # +4 because agent is currently carrying a block
+                        action = env.move_agent(agent_id, action, q_table, policy, epsilon) + 4
                     
             else:
                 
-                if step_count > 500:
-                        policy = 'random'
-                
                 if i['carrying'] == False:
-                    action = env.move_agent(agent_id, action, q_table, policy, epsilon)
+                    if step_count > 500:
+                        action = env.move_agent(agent_id, action, q_table, 'random', epsilon)
+                    else:
+                        action = env.move_agent(agent_id, action, q_table, policy, epsilon)
                 else:
-                    action = env.move_agent(agent_id, action, q_table, policy, epsilon) + 4
+                    if step_count > 500:
+                        action = env.move_agent(agent_id, action, q_table, 'random', epsilon) + 4
+                    else:
+                        action = env.move_agent(agent_id, action, q_table, policy, epsilon) + 4
                     
                 new_location = i['location']
                 (new_x, new_y) = new_location
