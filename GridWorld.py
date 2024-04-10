@@ -16,9 +16,9 @@ class RLEnvironment:
         self.dropoff_locations = [(0, 0), (2, 0), (3, 4)]
 
         # Initialize agent locations and colors
-        self.agent_info = [{'location': (3, 3), 'color': 'red', 'carrying': False},  # Agent ID 0
-                           {'location': (4, 3), 'color': 'blue', 'carrying': False},  # Agent ID 1
-                           {'location': (1, 3), 'color': 'black', 'carrying': False}]  # Agent ID 2
+        self.agent_info = [{'location': (2, 2), 'color': 'red', 'carrying': False},  # Agent ID 0
+                           {'location': (4, 2), 'color': 'blue', 'carrying': False},  # Agent ID 1
+                           {'location': (0, 2), 'color': 'black', 'carrying': False}]  # Agent ID 2
 
         # Initialize block counts at pickup and dropoff locations
         self.pickup_blocks = [5] * num_agents
@@ -144,9 +144,9 @@ class RLEnvironment:
         # Plot grid
         ax.grid(True)
         # Keep the x-axis ticks as they are
-        ax.set_xticks(np.arange(0, self.grid_size, 1))
+        ax.set_xticks(np.arange(0, self.grid_size+1, 1))
         # Keep the y-axis ticks as they are
-        ax.set_yticks(np.arange(0, self.grid_size, 1))
+        ax.set_yticks(np.arange(0, self.grid_size+1, 1))
 
         # Plot pickup locations
         for loc in self.pickup_locations:
@@ -283,6 +283,8 @@ def simulate_episodes(steps, env, q_table, alpha, gamma, epsilon, policy, learni
 
                 # Update the Q-value for the current state-action pair using the SARSA update rule
                 q_table[action][y][x] = q_table[action][y][x] + alpha * (reward + gamma * next_q_value - q_table[action][y][x])
+        
+        env.plot_world()
 
         # Resetting pickup and dropoff once all blocks have been picked up and dropped off
         if all(blocks == 5 for blocks in env.dropoff_blocks) and all(blocks == 0 for blocks in env.pickup_blocks):
@@ -299,7 +301,7 @@ def main():
     random.seed(10)
 
     env = RLEnvironment()
-    # env.plot_world()
+    env.plot_world()
     print(env.agent_info)  # Output the current agent information
 
     # Example usage:
@@ -316,7 +318,7 @@ def main():
 
     num_steps = 1000
     simulate_episodes(500, env, q_table, alpha, gamma, epsilon, 'random', 'q-learning')
-    simulate_episodes(5000, env, q_table, alpha, gamma, epsilon, 'exploit', 'q-learning')
+    #simulate_episodes(5000, env, q_table, alpha, gamma, epsilon, 'exploit', 'q-learning')
     
     print(q_table)
 
