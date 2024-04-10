@@ -170,12 +170,141 @@ class RLEnvironment:
         ax.invert_yaxis()  # Flip the y-axis
         plt.show()
 
+    def visualize_Attractive_Path(self, q_table):
+        nrows = 5
+        ncols = 5
+
+        DropOffCell = [(0, 0), (2, 0), (3, 4)]
+        PickUpCell = [(0, 4), (1, 3), (4, 1)]
+        
+        data1 = np.zeros((nrows,ncols))
+        data2 = np.zeros((nrows,ncols))
+        
+        # Creating optimal path for NOT HOLDING BLOCK
+        for y in range(ncols):
+            for x in range(nrows):
+                left = (q_table[0][y][x])
+                right = (q_table[1][y][x])
+                up = (q_table[2][y][x])
+                down = (q_table[3][y][x])
+                
+                pickUP = (q_table[8][y][x])
+                
+                check = []
+                
+                if left != 0: check.append(left)
+                if right != 0: check.append(right)
+                if up != 0: check.append(up)
+                if down != 0: check.append(down)
+                
+                maxQ = max(check)
+                
+                if (pickUP > 0):
+                    data1[y][x] = 8
+                elif (maxQ == left):
+                    data1[y][x] = 1
+                elif (maxQ == right):
+                    data1[y][x] = 2
+                elif (maxQ == up):
+                    data1[y][x] = 3
+                elif (maxQ == down):
+                    data1[y][x] = 4
+                    
+        # Creating optimal path for HOLDING BLOCK
+        for y in range(ncols):
+            for x in range(nrows):
+                left = (q_table[4][y][x])
+                right = (q_table[5][y][x])
+                up = (q_table[6][y][x])
+                down = (q_table[7][y][x])
+                
+                dropOFF = (q_table[9][y][x])
+                
+                check = []
+                
+                if left != 0: check.append(left)
+                if right != 0: check.append(right)
+                if up != 0: check.append(up)
+                if down != 0: check.append(down)
+                if dropOFF != 0: check.append(dropOFF)
+                
+                maxQ = max(check)
+                
+                if (maxQ == dropOFF):
+                    data2[y][x] = 9
+                elif (maxQ == left):
+                    data2[y][x] = 1
+                elif (maxQ == right):
+                    data2[y][x] = 2
+                elif (maxQ == up):
+                    data2[y][x] = 3
+                elif (maxQ == down):
+                    data2[y][x] = 4
+
+        # Reshaping Data1
+        data1 = np.ma.array(data1.reshape((nrows, ncols)), mask=data1==0)
+        
+        # Reshaping Data2
+        data2 = np.ma.array(data2.reshape((nrows, ncols)), mask=data2==0)
+
+        fig, (ax1, ax2) = plt.subplots(1, 2)
+        
+        # Plotting optimal path for NOT HOLDING BLOCK
+        for y in range(ncols):
+            for x in range(nrows):
+                
+                if data1[y][x] == 1: 
+                    ax1.plot(y, x, marker=r'$\uparrow$', color='green', markersize = 10)
+                elif data1[y][x] == 2: 
+                    ax1.plot(y, x, marker=r'$\downarrow$', color='green', markersize = 10)
+                elif data1[y][x] == 3: 
+                    ax1.plot(y, x, marker=r'$\leftarrow$', color='green', markersize = 10)
+                elif data1[y][x] == 4: 
+                    ax1.plot(y, x, marker=r'$\rightarrow$', color='green', markersize = 10)
+                elif data1[y][x] == 8: 
+                    ax1.plot(y, x, marker=r'$Pick Up$', color='green', markersize = 20)
+                    
+        # Plotting optimal path for HOLDING BLOCK
+        for y in range(ncols):
+            for x in range(nrows):
+                
+                if data2[y][x] == 1: 
+                    ax2.plot(y, x, marker=r'$\uparrow$', color='green', markersize = 10)
+                elif data2[y][x] == 2: 
+                    ax2.plot(y, x, marker=r'$\downarrow$', color='green', markersize = 10)
+                elif data2[y][x] == 3: 
+                    ax2.plot(y, x, marker=r'$\leftarrow$', color='green', markersize = 10)
+                elif data2[y][x] == 4: 
+                    ax2.plot(y, x, marker=r'$\rightarrow$', color='green', markersize = 10)
+                elif data2[y][x] == 9: 
+                    ax2.plot(y, x, marker=r'$Drop Off$', color='green', markersize = 20)
+                    
+
+        # Plot 1 WITHOUT BLOCK
+        ax1.set_xticks(np.arange(ncols+1)-0.5, minor=True)
+        ax1.set_yticks(np.arange(nrows+1)-0.5, minor=True)
+        ax1.set_title('Optimal Path Agent Without Block')
+        ax1.invert_yaxis()  # Flip the y-axis
+        ax1.grid(which="minor")
+        ax1.tick_params(which="minor", size=0)
+        
+        # Plot 2 WITH BLOCK
+        ax2.set_xticks(np.arange(ncols+1)-0.5, minor=True)
+        ax2.set_yticks(np.arange(nrows+1)-0.5, minor=True)
+        ax2.set_title('Optimal Path Agent With Block')
+        ax2.invert_yaxis()  # Flip the y-axis
+        ax2.grid(which="minor")
+        ax2.tick_params(which="minor", size=0)
+
+        plt.show()
 
 # Simulate Episodes
 def simulate_episodes(steps, env, q_table, alpha, gamma, epsilon, policy, learning):
     episode_count = 0
+    
     # initialize agent actions which stores next action taken when using SARSA
     agent_actions = np.full(3,-1)
+    
     for step_count in range(steps):
         for i in env.agent_info:
 
@@ -283,8 +412,6 @@ def simulate_episodes(steps, env, q_table, alpha, gamma, epsilon, policy, learni
 
                 # Update the Q-value for the current state-action pair using the SARSA update rule
                 q_table[action][y][x] = q_table[action][y][x] + alpha * (reward + gamma * next_q_value - q_table[action][y][x])
-        
-        env.plot_world()
 
         # Resetting pickup and dropoff once all blocks have been picked up and dropped off
         if all(blocks == 5 for blocks in env.dropoff_blocks) and all(blocks == 0 for blocks in env.pickup_blocks):
@@ -301,7 +428,7 @@ def main():
     random.seed(10)
 
     env = RLEnvironment()
-    env.plot_world()
+    #env.plot_world()
     print(env.agent_info)  # Output the current agent information
 
     # Example usage:
@@ -317,8 +444,10 @@ def main():
     epsilon = 0.1 # Exploration vs Exploitation factor
 
     num_steps = 1000
-    simulate_episodes(500, env, q_table, alpha, gamma, epsilon, 'random', 'q-learning')
+    simulate_episodes(500, env, q_table, alpha, gamma, epsilon, 'greedy', 'q-learning')
     #simulate_episodes(5000, env, q_table, alpha, gamma, epsilon, 'exploit', 'q-learning')
+    
+    env.visualize_Attractive_Path(q_table)
     
     print(q_table)
 
