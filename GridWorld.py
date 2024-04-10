@@ -58,7 +58,7 @@ class RLEnvironment:
 
         return applicable_operators
 
-    def move_agent(self, agent_id, action):
+    def move_agent(self, agent_id, action, q_table, policy, epsilon):
 
         x, y = self.agent_info[agent_id]['location']
 
@@ -67,9 +67,19 @@ class RLEnvironment:
         if not aplop:  # edge case where aplop is empty
             return 'none'  # stay still, agent is trapped
         
-        if action not in aplop:  # action chosen not valid
-            action = random.choice(list(aplop))  # choose random action
-        
+        if action not in aplop:  # action chosen not valid/applicable
+            if policy == 'random' or (policy == 'exploit' and random.uniform(0,1) < epsilon): 
+                action = random.choice(list(aplop)) # random action for random policy, and if exploration is chosen by exploit
+            else: 
+                # greedy and exploit if exploitation chosen by exploit
+                if self.agent_info[agent_id]['carrying'] == True:
+                    aplop_carrying = [index + 4 for index in aplop]
+                    action_index = np.argmax(q_table[aplop_carrying, y, x])
+                    action = list(aplop)[action_index]
+                else:
+                    action_index = np.argmax(q_table[list(aplop), y, x])
+                    action = list(aplop)[action_index]
+
         # Move Left
         if action == 0:
             x -= 1
@@ -201,7 +211,7 @@ def simulate_episodes(steps, env, q_table, alpha, gamma, epsilon, policy, learni
                 
                 # If there is not a block at the location: MOVE
                 else:  
-                    action = env.move_agent(agent_id, action)
+                    action = env.move_agent(agent_id, action, q_table, policy, epsilon)
 
             # If agent is at a drop off location and is carrying a block
             elif (x, y) in env.dropoff_locations and i['carrying'] == True:
@@ -218,13 +228,13 @@ def simulate_episodes(steps, env, q_table, alpha, gamma, epsilon, policy, learni
                 # If there is no space to drop off a block then: MOVE
                 else: 
                     # +4 because agent is currently carrying a block
-                    action = env.move_agent(agent_id, action) + 4
+                    action = env.move_agent(agent_id, action, q_table, policy, epsilon) + 4
                     
             else:
                 if i['carrying'] == False:
-                    action = env.move_agent(agent_id, action)
+                    action = env.move_agent(agent_id, action, q_table, policy, epsilon)
                 else:
-                    action = env.move_agent(agent_id, action) + 4
+                    action = env.move_agent(agent_id, action, q_table, policy, epsilon) + 4
                     
                 new_location = i['location']
                 (new_x, new_y) = new_location
