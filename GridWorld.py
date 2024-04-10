@@ -337,12 +337,8 @@ def simulate_episodes(steps, env, q_table, alpha, gamma, epsilon, policy, learni
                     max_q_value = np.max(q_table[4:7, y, x])
                 
                 # If there is not a block at the location: MOVE
-                else:  
-                    
-                    if step_count > 500:
-                        action = env.move_agent(agent_id, action, q_table, 'random', epsilon)
-                    else:  
-                        action = env.move_agent(agent_id, action, q_table, policy, epsilon)
+                else:    
+                    action = env.move_agent(agent_id, action, q_table, policy, epsilon)
 
             # If agent is at a drop off location and is carrying a block
             elif (x, y) in env.dropoff_locations and i['carrying'] == True:
@@ -358,25 +354,15 @@ def simulate_episodes(steps, env, q_table, alpha, gamma, epsilon, policy, learni
                 
                 # If there is no space to drop off a block then: MOVE
                 else: 
-                    
-                    if step_count > 500:
-                        action = env.move_agent(agent_id, action, q_table, 'random', epsilon)
-                    else:
-                        # +4 because agent is currently carrying a block
-                        action = env.move_agent(agent_id, action, q_table, policy, epsilon) + 4
+                    # +4 because agent is currently carrying a block
+                    action = env.move_agent(agent_id, action, q_table, policy, epsilon) + 4
                     
             else:
                 
                 if i['carrying'] == False:
-                    if step_count > 500:
-                        action = env.move_agent(agent_id, action, q_table, 'random', epsilon)
-                    else:
-                        action = env.move_agent(agent_id, action, q_table, policy, epsilon)
+                    action = env.move_agent(agent_id, action, q_table, policy, epsilon)
                 else:
-                    if step_count > 500:
-                        action = env.move_agent(agent_id, action, q_table, 'random', epsilon) + 4
-                    else:
-                        action = env.move_agent(agent_id, action, q_table, policy, epsilon) + 4
+                    action = env.move_agent(agent_id, action, q_table, policy, epsilon) + 4
                     
                 new_location = i['location']
                 (new_x, new_y) = new_location
@@ -456,9 +442,9 @@ def main():
     gamma = 0.5  # Discount factor
     epsilon = 0.1 # Exploration vs Exploitation factor
 
-    num_steps = 1000
-    simulate_episodes(num_steps, env, q_table, alpha, gamma, epsilon, 'random', 'q-learning')
-    #simulate_episodes(5000, env, q_table, alpha, gamma, epsilon, 'exploit', 'q-learning')
+    num_steps = 8500
+    simulate_episodes(500, env, q_table, alpha, gamma, epsilon, 'random', 'q-learning')
+    simulate_episodes(num_steps, env, q_table, alpha, gamma, epsilon, 'exploit', 'q-learning')
     
     env.visualize_Attractive_Path(q_table)
     
