@@ -16,6 +16,7 @@ class RLEnvironment:
         self.pickup_locations = [(0, 4), (1, 3), (4, 1)]
         self.dropoff_locations = [(0, 0), (2, 0), (3, 4)]
 
+        self.agent_start = [(2, 2), (4, 2), (0, 2)]
         # Initialize agent locations and colors
         self.agent_info = [{'location': (2, 2), 'color': 'red', 'carrying': False},  # Agent ID 0
                            {'location': (4, 2), 'color': 'blue', 'carrying': False},  # Agent ID 1
@@ -299,7 +300,6 @@ class RLEnvironment:
 # Simulate Episodes
 def simulate_episodes(steps, env, q_table, alpha, gamma, epsilon, policy, learning):
     episode_count = 0
-    
     # initialize agent actions which stores next action taken when using SARSA
     agent_actions = np.full(3,-1)
     
@@ -419,6 +419,8 @@ def simulate_episodes(steps, env, q_table, alpha, gamma, epsilon, policy, learni
             for i in range(len(env.pickup_blocks)):
                 env.pickup_blocks[i] = 5
             episode_count += 1
+            for i in range(len(env.agent_info)):
+                env.agent_info[i]['location'] = env.agent_start[i]
             
     return episode_count
 
