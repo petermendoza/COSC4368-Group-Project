@@ -16,6 +16,7 @@ class RLEnvironment:
         self.pickup_locations = pickUp
         self.dropoff_locations = dropOff
 
+        self.agent_start = [(2, 2), (4, 2), (0, 2)]
         # Initialize agent locations and colors
         self.agent_info = [{'location': (2, 2), 'color': 'red', 'carrying': False},  # Agent ID 0
                            {'location': (4, 2), 'color': 'blue', 'carrying': False},  # Agent ID 1
@@ -435,6 +436,8 @@ def simulate_episodes(steps, env, q_table, alpha, gamma, epsilon, policy, learni
                 return episode_count
             
             episode_count += 1
+            for i in range(len(env.agent_info)):
+                env.agent_info[i]['location'] = env.agent_start[i]
             
     return episode_count
 
@@ -479,12 +482,12 @@ def main():
     # Displays Q-Table and its values
     # Table 0 : Left Action (without block)
     # Table 1 : Right Action (without block)
-    # Table 2 : Up Action (without block)
-    # Table 3 : Down Action (without block)
+    # Table 2 : Down Action (without block)
+    # Table 3 : Up Action (without block)
     # Table 4 : Left Action (with block)
     # Table 5 : Right Action (with block)
-    # Table 6 : Up Action (with block)
-    # Table 7 : Down Action (with block)
+    # Table 6 : Down Action (with block)
+    # Table 7 : Up Action (with block)
     # Table 8 : Pick Up Action
     # Table 9 : Drop Off Action
     print(q_table)
