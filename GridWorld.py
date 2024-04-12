@@ -4,17 +4,17 @@ import matplotlib.pyplot as plt
 
 
 class RLEnvironment:
-    def __init__(self, grid_size=5, num_agents=3):
-        self.grid_size = grid_size
-        self.num_agents = num_agents
-        self.grid = np.zeros((grid_size, grid_size),
+    def __init__(self, pickUp, dropOff):
+        self.grid_size = 5
+        self.num_agents = 3
+        self.grid = np.zeros((5, 5),
                              dtype=int)  # Grid initialization
         self.agent_colors = ['red', 'black', 'blue']  # Colors for the agents
 
         # Initialize pickup and dropoff locations
         # Coordinates are x - 1 and y - 1 because we are starting index at [0 - 4] instead of [1 - 5]
-        self.pickup_locations = [(0, 4), (1, 3), (4, 1)]
-        self.dropoff_locations = [(0, 0), (2, 0), (3, 4)]
+        self.pickup_locations = pickUp
+        self.dropoff_locations = dropOff
 
         # Initialize agent locations and colors
         self.agent_info = [{'location': (2, 2), 'color': 'red', 'carrying': False},  # Agent ID 0
@@ -22,8 +22,8 @@ class RLEnvironment:
                            {'location': (0, 2), 'color': 'black', 'carrying': False}]  # Agent ID 2
 
         # Initialize block counts at pickup and dropoff locations
-        self.pickup_blocks = [5] * num_agents
-        self.dropoff_blocks = [0] * num_agents
+        self.pickup_blocks = [5] * 3
+        self.dropoff_blocks = [0] * 3
 
     def aplop(self, x, y):
         applicable_operators = set()
@@ -171,7 +171,13 @@ class RLEnvironment:
         ax.invert_yaxis()  # Flip the y-axis
         plt.show()
 
-    def visualize_Attractive_Path(self, q_table):
+    def get_pickUpLocation(self):
+        return self.pickup_locations
+
+    def change_pickUpLocation(self, pickUp):
+        self.pickup_locations = pickUp
+
+    def visualize_Attractive_Path(self, q_table, env):
         nrows = 5
         ncols = 5
         
@@ -186,7 +192,7 @@ class RLEnvironment:
                 up = (q_table[2][y][x])
                 down = (q_table[3][y][x])
                 
-                pickUP = (q_table[8][y][x])
+                #pickUP = (q_table[8][y][x])
                 
                 check = []
                 
@@ -197,9 +203,9 @@ class RLEnvironment:
                 
                 maxQ = max(check)
                 
-                if (pickUP > 0):
-                    data1[y][x] = 8
-                elif (maxQ == left):
+                #if (pickUP > 0):
+                    #data1[y][x] = 8
+                if (maxQ == left):
                     data1[y][x] = 1
                 elif (maxQ == right):
                     data1[y][x] = 2
@@ -251,7 +257,9 @@ class RLEnvironment:
         for y in range(ncols):
             for x in range(nrows):
                 
-                if data1[y][x] == 1: 
+                if (x,y) in env.get_pickUpLocation():
+                    ax1.plot(y, x, marker=r'$Pick Up$', color='green', markersize = 20)
+                elif data1[y][x] == 1: 
                     ax1.plot(y, x, marker=r'$\uparrow$', color='green', markersize = 10)
                 elif data1[y][x] == 2: 
                     ax1.plot(y, x, marker=r'$\downarrow$', color='green', markersize = 10)
@@ -259,8 +267,6 @@ class RLEnvironment:
                     ax1.plot(y, x, marker=r'$\leftarrow$', color='green', markersize = 10)
                 elif data1[y][x] == 4: 
                     ax1.plot(y, x, marker=r'$\rightarrow$', color='green', markersize = 10)
-                elif data1[y][x] == 8: 
-                    ax1.plot(y, x, marker=r'$Pick Up$', color='green', markersize = 20)
                     
         # Plotting optimal path for HOLDING BLOCK
         for y in range(ncols):
@@ -297,9 +303,9 @@ class RLEnvironment:
         plt.show()
 
 # Simulate Episodes
-def simulate_episodes(steps, env, q_table, alpha, gamma, epsilon, policy, learning):
+def simulate_episodes(steps, env, q_table, alpha, gamma, epsilon, policy, learning, experimentNum):
     episode_count = 0
-    
+    resetCount = 0
     # initialize agent actions which stores next action taken when using SARSA
     agent_actions = np.full(3,-1)
     
@@ -418,6 +424,16 @@ def simulate_episodes(steps, env, q_table, alpha, gamma, epsilon, policy, learni
                 env.dropoff_blocks[i] = 0
             for i in range(len(env.pickup_blocks)):
                 env.pickup_blocks[i] = 5
+            resetCount += 1
+            
+            if (experimentNum == 4 and resetCount == 3):
+                pickUpLoc = [(3,1), (2,2), (1,3)]
+                q_table[8] = np.zeros((5,5))
+                env.change_pickUpLocation(pickUpLoc)
+                
+            if (experimentNum == 4 and resetCount == 6):
+                return episode_count
+            
             episode_count += 1
             
     return episode_count
@@ -426,7 +442,10 @@ def main():
     np.set_printoptions(precision=3, suppress=True)
     random.seed(10)
 
-    env = RLEnvironment()
+    pickUpLoc = [(0, 4), (1, 3), (4, 1)]
+    dropOffLoc = [(0, 0), (2, 0), (3, 4)]
+
+    env = RLEnvironment(pickUp=pickUpLoc, dropOff=dropOffLoc)
     
     # Plotting GRIDWORLD Initial State
     #env.plot_world()
@@ -445,14 +464,17 @@ def main():
     gamma = 0.5  # Discount factor
     epsilon = 0.1 # Exploration vs Exploitation factor
 
+    # Change accordingly to experiment number
+    experimentNum = 4
+
     num_steps = 8500
-    simulate_episodes(500, env, q_table, alpha, gamma, epsilon, 'random', 'q-learning')
+    simulate_episodes(500, env, q_table, alpha, gamma, epsilon, 'random', 'q-learning', experimentNum)
     
     # Change parameters here to simulate experiments
-    simulate_episodes(num_steps, env, q_table, alpha, gamma, epsilon, 'exploit', 'q-learning')
+    simulate_episodes(num_steps, env, q_table, alpha, gamma, epsilon, 'exploit', 'q-learning', experimentNum)
     
     # Displays most optimal path for agents after learning
-    env.visualize_Attractive_Path(q_table)
+    env.visualize_Attractive_Path(q_table, env)
     
     # Displays Q-Table and its values
     # Table 0 : Left Action (without block)
