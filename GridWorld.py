@@ -464,8 +464,8 @@ def simulate_episodes(steps, env, q_table, alpha, gamma, epsilon, policy, learni
                 
     # Prints Average Reward for Each Agent and Success Rates
     for i in env.agent_info:
-        print(i['color'], i['rewards']/resetCount)
-        print(i['successMove']/i['moveCounter'])
+        print("Average reward for",i['color'], i['rewards']/resetCount)
+        print("Success rate for",i['color'],i['successMove']/i['moveCounter'])
             
     return episode_count
 
