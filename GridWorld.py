@@ -347,7 +347,7 @@ def simulate_episodes(steps, env, q_table, alpha, gamma, epsilon, policy, learni
                 
                 # If there is not a block at the location: MOVE
                 else:
-                    if steps < 500:
+                    if step_count < 500:
                         action = env.move_agent(agent_id, action, q_table, 'random', epsilon)
                     else:
                         action = env.move_agent(agent_id, action, q_table, policy, epsilon)
@@ -367,7 +367,7 @@ def simulate_episodes(steps, env, q_table, alpha, gamma, epsilon, policy, learni
                 # If there is no space to drop off a block then: MOVE
                 else: 
                     # +4 because agent is currently carrying a block
-                    if steps < 500:
+                    if step_count < 500:
                         action = env.move_agent(agent_id, action, q_table, 'random', epsilon) + 4
                     else:
                         action = env.move_agent(agent_id, action, q_table, policy, epsilon) + 4
@@ -375,12 +375,12 @@ def simulate_episodes(steps, env, q_table, alpha, gamma, epsilon, policy, learni
             else:
                 
                 if i['carrying'] == False:
-                    if steps < 500:
+                    if step_count < 500:
                         action = env.move_agent(agent_id, action, q_table, 'random', epsilon)
                     else:
                         action = env.move_agent(agent_id, action, q_table, policy, epsilon)
                 else:
-                    if steps < 500:
+                    if step_count < 500:
                         action = env.move_agent(agent_id, action, q_table, 'random', epsilon) + 4
                     else:
                         action = env.move_agent(agent_id, action, q_table, policy, epsilon) + 4
