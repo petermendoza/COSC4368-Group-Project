@@ -303,6 +303,7 @@ class RLEnvironment:
 
         plt.show()
 
+
 # Simulate Episodes
 def simulate_episodes(steps, env, q_table, alpha, gamma, epsilon, policy, learning, experimentNum):
     episode_count = 0
@@ -441,9 +442,23 @@ def simulate_episodes(steps, env, q_table, alpha, gamma, epsilon, policy, learni
             
     return episode_count
 
+def calculate_success_rate(q_table): 
+    num_success_action = 0 
+    total_action = 0
+
+    for state in q_table: 
+        for action_rewards in state: 
+            total_action += 1
+            max_reward = max(action_rewards)
+            if max_reward > 0:
+                num_success_action += 1
+
+    success_rate = num_success_action / total_action
+    return success_rate
+
 def main():
     np.set_printoptions(precision=3, suppress=True)
-    random.seed(10)
+    random.seed(20)
 
     pickUpLoc = [(0, 4), (1, 3), (4, 1)]
     dropOffLoc = [(0, 0), (2, 0), (3, 4)]
@@ -468,7 +483,7 @@ def main():
     epsilon = 0.1 # Exploration vs Exploitation factor
 
     # Change accordingly to experiment number
-    experimentNum = 4
+    experimentNum = 1
 
     num_steps = 8500
     simulate_episodes(500, env, q_table, alpha, gamma, epsilon, 'random', 'q-learning', experimentNum)
@@ -492,6 +507,13 @@ def main():
     # Table 9 : Drop Off Action
     print(q_table)
 
+# calculate averge reward based on the q-table
+    average_reward = np.mean(q_table)
+    print(average_reward)
+    
+#calculate success rate based on the q-table
+    success_rate = calculate_success_rate(q_table)
+    print(success_rate)
 
 if __name__ == "__main__":
     main()
