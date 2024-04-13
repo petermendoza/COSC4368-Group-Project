@@ -18,9 +18,9 @@ class RLEnvironment:
 
         self.agent_start = [(2, 2), (4, 2), (0, 2)]
         # Initialize agent locations and colors
-        self.agent_info = [{'location': (2, 2), 'color': 'red', 'carrying': False},  # Agent ID 0
-                           {'location': (4, 2), 'color': 'blue', 'carrying': False},  # Agent ID 1
-                           {'location': (0, 2), 'color': 'black', 'carrying': False}]  # Agent ID 2
+        self.agent_info = [{'location': (2, 2), 'color': 'red', 'carrying': False, 'moveCounter': 0, 'successMove': 0, 'rewards': 0},  # Agent ID 0
+                           {'location': (4, 2), 'color': 'blue', 'carrying': False, 'moveCounter': 0, 'successMove': 0, 'rewards': 0},  # Agent ID 1
+                           {'location': (0, 2), 'color': 'black', 'carrying': False, 'moveCounter': 0, 'successMove': 0, 'rewards': 0}]  # Agent ID 2
 
         # Initialize block counts at pickup and dropoff locations
         self.pickup_blocks = [5] * 3
@@ -308,6 +308,11 @@ class RLEnvironment:
 def simulate_episodes(steps, env, q_table, alpha, gamma, epsilon, policy, learning, experimentNum):
     episode_count = 0
     resetCount = 0
+    
+    rewardRed = 0
+    rewardBlue = 0
+    rewardBlack = 0
+    
     # initialize agent actions which stores next action taken when using SARSA
     agent_actions = np.full(3,-1)
     
@@ -322,7 +327,7 @@ def simulate_episodes(steps, env, q_table, alpha, gamma, epsilon, policy, learni
                     agent_id = 1
                 case 'black':
                     agent_id = 2
-                    
+            
             location = i['location']
             (x, y) = location
             
@@ -345,8 +350,11 @@ def simulate_episodes(steps, env, q_table, alpha, gamma, epsilon, policy, learni
                     max_q_value = np.max(q_table[4:7, y, x])
                 
                 # If there is not a block at the location: MOVE
-                else:    
-                    action = env.move_agent(agent_id, action, q_table, policy, epsilon)
+                else:
+                    if steps < 500:
+                        action = env.move_agent(agent_id, action, q_table, 'random', epsilon)
+                    else:
+                        action = env.move_agent(agent_id, action, q_table, policy, epsilon)
 
             # If agent is at a drop off location and is carrying a block
             elif (x, y) in env.dropoff_locations and i['carrying'] == True:
@@ -363,14 +371,23 @@ def simulate_episodes(steps, env, q_table, alpha, gamma, epsilon, policy, learni
                 # If there is no space to drop off a block then: MOVE
                 else: 
                     # +4 because agent is currently carrying a block
-                    action = env.move_agent(agent_id, action, q_table, policy, epsilon) + 4
+                    if steps < 500:
+                        action = env.move_agent(agent_id, action, q_table, 'random', epsilon) + 4
+                    else:
+                        action = env.move_agent(agent_id, action, q_table, policy, epsilon) + 4
                     
             else:
                 
                 if i['carrying'] == False:
-                    action = env.move_agent(agent_id, action, q_table, policy, epsilon)
+                    if steps < 500:
+                        action = env.move_agent(agent_id, action, q_table, 'random', epsilon)
+                    else:
+                        action = env.move_agent(agent_id, action, q_table, policy, epsilon)
                 else:
-                    action = env.move_agent(agent_id, action, q_table, policy, epsilon) + 4
+                    if steps < 500:
+                        action = env.move_agent(agent_id, action, q_table, 'random', epsilon) + 4
+                    else:
+                        action = env.move_agent(agent_id, action, q_table, policy, epsilon) + 4
                     
                 new_location = i['location']
                 (new_x, new_y) = new_location
@@ -396,6 +413,14 @@ def simulate_episodes(steps, env, q_table, alpha, gamma, epsilon, policy, learni
             # If agent is trapped in a corner, will not update q-values
             if action == 'none':
                 continue
+            
+            if action == 8 or action == 9:
+                i['successMove'] += 1
+                i['moveCounter'] += 1
+            else:
+                i['moveCounter'] += 1
+                
+            i['rewards'] += reward
                 
             if (learning == 'q-learning'):
                 
@@ -420,6 +445,7 @@ def simulate_episodes(steps, env, q_table, alpha, gamma, epsilon, policy, learni
                 # Update the Q-value for the current state-action pair using the SARSA update rule
                 q_table[action][y][x] = q_table[action][y][x] + alpha * (reward + gamma * next_q_value - q_table[action][y][x])
 
+
         # Resetting pickup and dropoff once all blocks have been picked up and dropped off
         if all(blocks == 5 for blocks in env.dropoff_blocks) and all(blocks == 0 for blocks in env.pickup_blocks):
             for i in range(len(env.dropoff_blocks)):
@@ -439,22 +465,13 @@ def simulate_episodes(steps, env, q_table, alpha, gamma, epsilon, policy, learni
             episode_count += 1
             for i in range(len(env.agent_info)):
                 env.agent_info[i]['location'] = env.agent_start[i]
+                
+    # Prints Average Reward for Each Agent and Success Rates
+    for i in env.agent_info:
+        print(i['color'], i['rewards']/resetCount)
+        print(i['successMove']/i['moveCounter'])
             
     return episode_count
-
-def calculate_success_rate(q_table): 
-    num_success_action = 0 
-    total_action = 0
-
-    for state in q_table: 
-        for action_rewards in state: 
-            total_action += 1
-            max_reward = max(action_rewards)
-            if max_reward > 0:
-                num_success_action += 1
-
-    success_rate = num_success_action / total_action
-    return success_rate
 
 def main():
     np.set_printoptions(precision=3, suppress=True)
@@ -485,8 +502,8 @@ def main():
     # Change accordingly to experiment number
     experimentNum = 1
 
-    num_steps = 8500
-    simulate_episodes(500, env, q_table, alpha, gamma, epsilon, 'random', 'q-learning', experimentNum)
+    num_steps = 9000
+    #simulate_episodes(500, env, q_table, alpha, gamma, epsilon, 'random', 'q-learning', experimentNum)
     
     # Change parameters here to simulate experiments
     simulate_episodes(num_steps, env, q_table, alpha, gamma, epsilon, 'exploit', 'q-learning', experimentNum)
@@ -506,14 +523,6 @@ def main():
     # Table 8 : Pick Up Action
     # Table 9 : Drop Off Action
     print(q_table)
-
-# calculate averge reward based on the q-table
-    average_reward = np.mean(q_table)
-    print(average_reward)
-    
-#calculate success rate based on the q-table
-    success_rate = calculate_success_rate(q_table)
-    print(success_rate)
 
 if __name__ == "__main__":
     main()
