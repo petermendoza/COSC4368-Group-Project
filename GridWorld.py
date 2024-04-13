@@ -309,10 +309,6 @@ def simulate_episodes(steps, env, q_table, alpha, gamma, epsilon, policy, learni
     episode_count = 0
     resetCount = 0
     
-    rewardRed = 0
-    rewardBlue = 0
-    rewardBlack = 0
-    
     # initialize agent actions which stores next action taken when using SARSA
     agent_actions = np.full(3,-1)
     
