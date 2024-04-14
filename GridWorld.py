@@ -506,6 +506,7 @@ def main():
     num_steps = 9000
     
     # Change parameters here to simulate experiments
+    simulate_episodes(500, env, q_table, alpha, gamma, epsilon, 'random', 'q-learning', experimentNum)
     simulate_episodes(num_steps, env, q_table, alpha, gamma, epsilon, 'exploit', 'q-learning', experimentNum)
     
     # Displays most optimal path for agents after learning
