@@ -537,16 +537,6 @@ def main():
                 print("Drop Off Action")
         print(i)
         q_table_count+=1
-    # Table 0 : Left Action (without block)
-    # Table 1 : Right Action (without block)
-    # Table 2 : Down Action (without block)
-    # Table 3 : Up Action (without block)
-    # Table 4 : Left Action (with block)
-    # Table 5 : Right Action (with block)
-    # Table 6 : Down Action (with block)
-    # Table 7 : Up Action (with block)
-    # Table 8 : Pick Up Action
-    # Table 9 : Drop Off Action
 
 if __name__ == "__main__":
     main()
