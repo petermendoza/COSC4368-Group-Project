@@ -512,7 +512,31 @@ def main():
     env.visualize_Attractive_Path(q_table, env)
     
     # Displays Q-Table and its values
-    print(q_table)
+    q_table_count = 0
+    for i in q_table:
+        match q_table_count:
+            case 0:
+                print("Left Action (without block)")
+            case 1:
+                print("Right Action (without block)")
+            case 2:
+                print("Down Action (without block)")
+            case 3:
+                print("Up Action (without block)")
+            case 4:
+                print("Left Action (with block)")
+            case 5:
+                print("Right Action (with block)")
+            case 6:
+                print("Down Action (with block)")
+            case 7:
+                print("Up Action (with block)")
+            case 8:
+                print("Pick Up Action")
+            case 9:
+                print("Drop Off Action")
+        print(i)
+        q_table_count+=1
     # Table 0 : Left Action (without block)
     # Table 1 : Right Action (without block)
     # Table 2 : Down Action (without block)
