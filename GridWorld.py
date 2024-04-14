@@ -2,7 +2,7 @@ import numpy as np
 import random
 import matplotlib.pyplot as plt
 
-
+# Environment Setup
 class RLEnvironment:
     def __init__(self, pickUp, dropOff):
         self.grid_size = 5
@@ -26,6 +26,7 @@ class RLEnvironment:
         self.pickup_blocks = [5] * 3
         self.dropoff_blocks = [0] * 3
 
+    # Shows applicable operators which is used for move_agent method
     def aplop(self, x, y):
         applicable_operators = set()
 
@@ -60,6 +61,7 @@ class RLEnvironment:
 
         return applicable_operators
 
+    # Moves the agent depending on applicable operators and policy
     def move_agent(self, agent_id, action, q_table, policy, epsilon):
 
         x, y = self.agent_info[agent_id]['location']
@@ -103,6 +105,7 @@ class RLEnvironment:
 
         return action
     
+    # Shows which actions to take which get used in move_agent method
     def select_action(self, policy, q_table, epsilon, carrying, x, y):
         
         # RANDOM Policy
@@ -137,6 +140,7 @@ class RLEnvironment:
             else:
                 return max_q_action   
 
+    # Visualization for seeing the world
     def plot_world(self):
         """
         Plot the current state of the world.
@@ -178,6 +182,7 @@ class RLEnvironment:
     def change_pickUpLocation(self, pickUp):
         self.pickup_locations = pickUp
 
+    # Shows directions for each state showing best action taken depending on if carrying a block or not
     def visualize_Attractive_Path(self, q_table, env):
         nrows = 5
         ncols = 5
@@ -507,6 +512,7 @@ def main():
     env.visualize_Attractive_Path(q_table, env)
     
     # Displays Q-Table and its values
+    print(q_table)
     # Table 0 : Left Action (without block)
     # Table 1 : Right Action (without block)
     # Table 2 : Down Action (without block)
@@ -517,7 +523,6 @@ def main():
     # Table 7 : Up Action (with block)
     # Table 8 : Pick Up Action
     # Table 9 : Drop Off Action
-    print(q_table)
 
 if __name__ == "__main__":
     main()
