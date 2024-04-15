@@ -4,13 +4,50 @@
 
 #### Bryant Huynh, Peter Mendoza, Maryann Tran, Ryan Park
 
-## How to run experiments
+### About the Project
+We were tasked to create a Grid World with the goal of having three agents, red, blue and black, learn the most promising paths to pickup a total of 5 blocks from any of the 3 pickup locations and dropoff to any of the 3 dropoff locations. 
 
-Since each experiment is just a change in the hyperparameters, seed, policy used, and choosing between Q-Learning and SARSA, we modularized the methods and you only need to change certain things in the main function to run each separate experiment.  
-The first thing you can set in main is a seed, which can be changed to any integer of your choice, and is used solely for replicating results.  
-You can change alpha (learning rate), gamma (discount factor), and epsilon (exploration vs exploitation factor), in lines 499-501, which are changed between experiments, so you can change those parameters to your needs.  
-You then need to change experimentNum in line 504 to whatever experiment you are running, but it really only matters for experiment 4 as the pickup locations change.  
-Then you can change the number of steps you will be using with num_steps.  
-To actually run the agents, you will use the simulate_episodes function, with parameters (num_steps, environment, q_table, alpha, gamma, epsilon, policy, learning type, experimentNum). For the most part, you will just want to change the policy and learning type. The options for policy are 'random', 'greedy', and 'exploit', and the options for learning are 'q-learning' and 'sarsa'.  
+### Prerequisities 
 
-The rest is just for visualization and such, but that should be all you need for running every experiment.
+* NumPy
+```sh
+pip install numpy
+```
+
+* Matplotlib
+```sh
+python -m pip install -U matplotlib
+```
+### Seed 
+In the main function, line 479
+
+```sh
+    random.seed(CHANGE TO PREFERRED NUMBER HERE)
+```
+The seed can be changed to any integer of your choice, and is used solely to prevent replicating results.
+
+
+### How to Change Policy
+The three agents can learn through any of three policies: Random, Greedy, and Exploit. 
+
+In the main function, line 509
+```sh
+ simulate_episodes(num_steps, env, q_table, alpha, gamma, epsilon, 'CHANGE POLICY HERE', 'CHANGE ALGORITHM HERE', experimentNum)
+```
+You can change the policy by typing the correct policy (syntax matters) : 'random', 'greedy', or 'exploit
+
+### How to Change Algorithm
+The algorithm can be changed to either of the two algorithms: Q-Learning & SARSA
+
+In the main funciton, line 509
+```sh
+ simulate_episodes(num_steps, env, q_table, alpha, gamma, epsilon, 'CHANGE POLICY HERE', 'CHANGE ALGORITHM HERE', experimentNum)
+```
+You can change the algorithm by typing the correct policy (syntax matters) : 'q-learning' or 'sarsa'
+
+### How to Change Learning rate
+The learning rate can be changed in the main function , line 499
+
+```sh
+    alpha = CHANGE TO PREFERRED NUMBER
+```
